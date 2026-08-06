@@ -346,6 +346,12 @@ cargo install --path kq-cli
 kq --help
 ```
 
+> **Note on the `kq` name:** the crates.io package [`kq`](https://crates.io/crates/kq)
+> is an unrelated KDL query tool. Our package is `kq-cli` and installs the `kq`
+> binary. If you already have the other `kq` installed, cargo refuses to
+> overwrite the binary — run `cargo install kq-cli --force` or
+> `cargo uninstall kq` first.
+
 Or download a binary from [GitHub Releases](https://github.com/bimawa/KnowledgeQuery).
 
 ## Publishing

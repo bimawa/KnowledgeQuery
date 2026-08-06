@@ -6,7 +6,7 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 description = "Git-native knowledge platform CLI: hybrid search, traceability, tasks and docs."
-keywords = ["knowledge", "git", "markdown", "traceability", "documentation"]
+keywords = ["knowledge", "git", "markdown", "traceability", "kq"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
