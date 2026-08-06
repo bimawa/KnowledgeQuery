@@ -83,6 +83,49 @@ kq userflow "Onboarding Flow"
 kq doc list
 ```
 
+## Document Types & the Document Chain
+
+Every template in `.kq/templates/` carries a specific semantic load — the type is chosen
+by what question the document answers, not by preference. The types form a chain:
+each next type refines the previous one, from business intent down to the data
+specification that code implements.
+
+| Type | Category | What this document does | Example |
+|------|----------|-------------------------|---------|
+| `idea` | Ideas | Unvalidated thought: problem statement, proposed solution, impact, effort estimate | "Push notifications will increase retention" |
+| `bft` | Business Foundation | Business-functional foundation: objectives, stakeholders, scope (in/out). The root of the chain — what the business wants and why | BFT-001 "User Authentication" |
+| `brd` | Business Foundation | Business requirements: what the business needs, priorities, assumptions, constraints, acceptance criteria | BR-001: "Payments must support card and SBP" |
+| `frd` | Product & UX | Functional requirements: how the system behaves — UI, business rules, data, error handling | FR-002: "Login form must validate email format" |
+| `nfr` | Business Foundation | Non-functional requirements: performance, security, availability, scalability | "p95 < 300 ms; TLS everywhere" |
+| `user_story` | Product & UX | User story: As a / I want / so that, acceptance criteria | "As a user, I want to reset my password so that I can regain access" |
+| `adr` | Architecture | Recorded architectural decision: context, decision, consequences, alternatives considered | ADR-001: "Store JWT in Keychain" |
+| `rfc` | Architecture | Proposal for discussion before committing: motivation, detailed design, alternatives, open questions | RFC: "Migrate REST → GraphQL" |
+| `tz` | Technical Design | Technical design: architecture, API, data model, implementation plan, testing strategy | TZ-001: "API Gateway design" |
+| `screen` | Technical Design | Single screen: layout, components, states (loading/empty/error), interactions | "Login screen" |
+| `userflow` | Technical Design | End-to-end flow: steps, decision points, error paths, success criteria | "Onboarding flow" |
+| `glossary` | Glossary | Term definition, context, related terms | "Idempotency" |
+| `typespec` | TypeSpec | Data specification (TypeSpec model) — the terminal link before code | `TypeSpec/User.tsp` |
+
+### The Document Chain
+
+Create documents in this order — each type flows from the previous one:
+
+```
+idea → bft → brd/frd/nfr → adr → rfc → tz → typespec → code
+```
+
+1. **idea** — a thought worth exploring. Once validated, formalize it into a `bft`.
+2. **bft** — the root of the chain: what the business wants and why (objectives, stakeholders, scope). Example: "User Authentication".
+3. **brd / frd / nfr** — derived from the `bft`: business, functional and non-functional requirements that detail it.
+4. **adr** — an architectural decision made to satisfy those requirements: context, decision, consequences.
+5. **rfc** — a proposal for a significant change, discussed before it becomes a final design.
+6. **tz** — the technical design that fixes the decision in concrete terms: architecture, API, data model.
+7. **typespec** — the data specification: models the design as checkable `TypeSpec` contracts.
+8. **code** — implements the specification, linked back via `@doc-anchor`.
+
+`kq check traceability-deep` verifies the chain is complete (`BFT → ADR → TZ → TypeSpec`),
+flagging any missing link.
+
 ## TypeSpec — Data Specifications
 
 ```bash
@@ -286,16 +329,35 @@ just check       # build + lint + test + fmt
 
 # On tag v* — release build for 3 platforms + GitHub Release
 .github/workflows/release.yml
+
+# On tag v* — publish all workspace crates to crates.io
+.github/workflows/publish.yml
 ```
 
 ## Installation
 
 ```bash
+# From crates.io (installs the `kq` binary)
+cargo install kq-cli
+
+# From source
 cargo install --path kq-cli
+
 kq --help
 ```
 
 Or download a binary from [GitHub Releases](https://github.com/bimawa/KnowledgeQuery).
+
+## Publishing
+
+Workspace crates are published to crates.io from a `v*` tag:
+
+1. `just bump-version 0.2.0` — bump the single workspace version in `Cargo.toml`
+2. Commit and push the tag `v0.2.0` (must match the workspace version)
+3. CI runs tests, then publishes `kq-config` → `kq-llm` → `kq-embeddings` → `kq-core` → `kq-cli` in dependency order
+4. `just publish-check` — local pre-flight: dry-run publish of the leaf crates and a package file audit of the dependents
+
+Requires the `CARGO_REGISTRY_TOKEN` secret in GitHub repository settings.
 
 ## Project Structure
 

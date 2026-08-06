@@ -1,6 +1,11 @@
 [package]
 name = "kq-config"
+version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Configuration parsing for kq (knowledge.toml): paths, providers, watcher and search settings."
 
 [dependencies]
 serde.workspace = true

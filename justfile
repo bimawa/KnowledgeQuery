@@ -29,6 +29,21 @@ fmt-fix:
 # Full CI check: build + lint + test + fmt
 check: build lint test fmt
 
+# Publish dry-run. Leaf crates verify fully; dependent crates (kq-core, kq-cli)
+# cannot resolve their unpublished path deps locally, so they are audited via
+# `cargo package --list` and verified in CI after the leaves are live.
+publish-check:
+    cargo publish -p kq-config --dry-run --allow-dirty
+    cargo publish -p kq-llm --dry-run --allow-dirty
+    cargo publish -p kq-embeddings --dry-run --allow-dirty
+    cargo package -p kq-core --list --allow-dirty
+    cargo package -p kq-cli --list --allow-dirty
+
+# Bump workspace version (single source of truth in Cargo.toml)
+bump-version VERSION:
+    sed -i.bak -E 's/^version = "[0-9]+\.[0-9]+\.[0-9]+"$$/version = "{{VERSION}}"/' Cargo.toml
+    rm -f Cargo.toml.bak
+
 # Remove build artifacts
 clean:
     cargo clean
@@ -43,5 +58,7 @@ help:
     @echo "  fmt       - Check formatting"
     @echo "  fmt-fix   - Fix formatting"
     @echo "  check     - Build + lint + test + fmt (CI equivalent)"
+    @echo "  publish-check - Publish dry-run (leaves) + package audit (dependents)"
+    @echo "  bump-version VERSION - Bump workspace version in Cargo.toml"
     @echo "  clean     - Remove build artifacts"
     @echo "  help      - Show this help"

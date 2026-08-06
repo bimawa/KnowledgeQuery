@@ -1,6 +1,11 @@
 [package]
 name = "kq-core"
+version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Core engine for kq: watcher, search (FTS + vector), git ops, task manager and README generation."
 
 [dependencies]
 dirs.workspace = true
@@ -18,9 +23,9 @@ anyhow.workspace = true
 thiserror.workspace = true
 serde_json.workspace = true
 serde_yaml.workspace = true
-kq-config = { path = "../kq-config" }
-kq-embeddings = { path = "../kq-embeddings" }
-kq-llm = { path = "../kq-llm" }
+kq-config.workspace = true
+kq-embeddings.workspace = true
+kq-llm.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

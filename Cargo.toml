@@ -6,6 +6,9 @@ members = ["kq-cli", "kq-core", "kq-embeddings", "kq-llm", "kq-config"]
 edition = "2024"
 version = "0.1.0"
 authors = ["kq team"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/bimawa/KnowledgeQuery"
+rust-version = "1.85"
 
 [workspace.dependencies]
 clap = { version = "4", features = ["derive"] }
@@ -34,3 +37,9 @@ serde_yaml = "0.9"
 tokio-stream = "0.1"
 regex = "1"
 async-trait = "0.1"
+
+# Internal crates: version + path so `cargo publish` resolves them on crates.io
+kq-config = { version = "0.1.0", path = "kq-config" }
+kq-llm = { version = "0.1.0", path = "kq-llm" }
+kq-embeddings = { version = "0.1.0", path = "kq-embeddings" }
+kq-core = { version = "0.1.0", path = "kq-core" }

@@ -1,16 +1,24 @@
 [package]
 name = "kq-cli"
+version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Git-native knowledge platform CLI: hybrid search, traceability, tasks and docs."
+keywords = ["knowledge", "git", "markdown", "traceability", "documentation"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 clap.workspace = true
 anyhow.workspace = true
 dirs.workspace = true
 tokio.workspace = true
-kq-core = { path = "../kq-core" }
-kq-config = { path = "../kq-config" }
-  kq-llm = { path = "../kq-llm" }
-  kq-embeddings = { path = "../kq-embeddings" }
+kq-core.workspace = true
+kq-config.workspace = true
+kq-llm.workspace = true
+kq-embeddings.workspace = true
+
 [[bin]]
 name = "kq"
 path = "src/main.rs"
