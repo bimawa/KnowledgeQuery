@@ -1,4 +1,4 @@
-# Project Principles: kq
+# Project Principles: kqs
 
 > Status: Active
 > Last Updated: 2026-07-09
@@ -31,7 +31,7 @@
 **Level:** MUST  
 **Rule:** Никакого веб-сервера, REST API, Web UI. Chistый CLI + background daemon.  
 Obsidian (или любой markdown-редактор) — интерфейс для чтения и редактирования.  
-**Reason:** kq не заменяет Obsidian. kq решает то, чего нет в Obsidian: sync, 
+**Reason:** kqs не заменяет Obsidian. kqs решает то, чего нет в Obsidian: sync, 
 поиск, AI, таски.  
 **Applies to:** PRD, SPEC, TASKS, EXEC, REVIEW
 
@@ -64,17 +64,17 @@ Push — только по команде `kqs push`.
 ### P-006: README is Auto-Generated
 
 **Level:** SHOULD  
-**Rule:** kq обновляет README проекта после каждого push. Ручные правки 
-сохраняются — kq пишет только между маркерами `<!-- kq:start -->`.  
+**Rule:** kqs обновляет README проекта после каждого push. Ручные правки
+сохраняются — kqs пишет только между маркерами `<!-- kqs:start -->`.
 **Reason:** README всегда актуален. Никто не забывает обновить статус задач.  
 **Applies to:** PRD, SPEC, TASKS, EXEC
 
 ### P-007: Minimal Surprise
 
 **Level:** SHOULD  
-**Rule:** kq не делает ничего, что пользователь не просил. Watcher коммитит 
-локально — не пушит. kqs push спрашивает при конфликте.  
-**Reason:** Доверие пользователя. kq — инструмент, а не автопилот.  
+**Rule:** kqs не делает ничего, что пользователь не просил. Watcher коммитит
+локально — не пушит. kqs push спрашивает при конфликте.
+**Reason:** Доверие пользователя. kqs — инструмент, а не автопилот.
 **Applies to:** SPEC, TASKS, EXEC, REVIEW
 
 ### P-008: Trace Graph is a Cache
@@ -87,14 +87,14 @@ Push — только по команде `kqs push`.
 ### P-009: Cross-Repo Scanning — Pull, Not Push
 
 **Level:** SHOULD
-**Rule:** kq сканирует внешние репозитории через локальную файловую систему (предполагается clone), не через API. kq НЕ пушит изменения в code-repos.
-**Reason:** Безопасность и изоляция. kq не заходит в чужой CI/CD.
+**Rule:** kqs сканирует внешние репозитории через локальную файловую систему (предполагается clone), не через API. kqs НЕ пушит изменения в code-repos.
+**Reason:** Безопасность и изоляция. kqs не заходит в чужой CI/CD.
 **Applies to:** SPEC, TASKS, EXEC
 
 ### P-010: Code Anchors — Convention, Not Enforced
 
 **Level:** SHOULD
-**Rule:** Аннотации `@doc-anchor` и `@see` в исходниках — опциональный стандарт. kq не ломает сборку при их отсутствии, только предупреждает в `kqs check`.
+**Rule:** Аннотации `@doc-anchor` и `@see` в исходниках — опциональный стандарт. kqs не ломает сборку при их отсутствии, только предупреждает в `kqs check`.
 **Reason:** Адаптация gradual. Насилие над командой не работает.
 **Applies to:** PRD, SPEC, TASKS
 

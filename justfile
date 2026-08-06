@@ -1,4 +1,4 @@
-# kq development commands
+# kqs development commands
 
 set shell := ["bash", "-uc", "unset CARGO_TARGET_DIR; eval $@", "bash"]
 

@@ -50,9 +50,9 @@ enum Command {
     Userflow(UserflowArgs),
     /// Run checks (traceability, orphans)
     Check(CheckArgs),
-    /// Handle a kq:// protocol URL
+    /// Handle a kqs:// protocol URL
     HandleUrl { url: String },
-    /// Install the kq:// protocol handler on this system
+    /// Install the kqs:// protocol handler on this system
     InstallProtocol,
     /// LLM-oriented help: complete system prompt for AI assistants
     LlmHelp,
@@ -348,9 +348,9 @@ fn main() -> Result<()> {
 
     // Mode detection
     let mode = if cli.dev {
-        kq_core::KqMode::Dev
+        kq_core::KqsMode::Dev
     } else if cli.doc {
-        kq_core::KqMode::Doc
+        kq_core::KqsMode::Doc
     } else {
         kq_core::detect_mode(&std::env::current_dir()?)
     };
@@ -619,7 +619,7 @@ fn main() -> Result<()> {
             let repo_path = resolve_repo_path(None)?;
             let readme_path = repo_path.join("README.md");
             if !readme_path.exists() {
-                let initial = "# Project\n\n<!-- kq:start -->\n<!-- kq:end -->\n";
+                let initial = "# Project\n\n<!-- kqs:start -->\n<!-- kqs:end -->\n";
                 std::fs::write(&readme_path, initial)
                     .with_context(|| format!("Failed to create {}", readme_path.display()))?;
                 eprintln!("[kqs] Created README.md at {}", readme_path.display());
@@ -830,10 +830,10 @@ fn main() -> Result<()> {
                 }
             };
 
-            let path = url.strip_prefix("kq://").or_else(|| url.strip_prefix("kq:")).unwrap_or(&url);
+            let path = url.strip_prefix("kqs://").or_else(|| url.strip_prefix("kqs:")).unwrap_or(&url);
             let parts: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
             if parts.len() < 2 {
-                anyhow::bail!("Invalid kq:// URL: {}", url);
+                anyhow::bail!("Invalid kqs:// URL: {}", url);
             }
             match parts[0] {
                 "task" | "tasks" => match parts[1] {
@@ -854,7 +854,7 @@ fn main() -> Result<()> {
                     }
                     _ => anyhow::bail!("Unknown task command in URL: {}", url),
                 },
-                _ => anyhow::bail!("Unknown command in kq:// URL: {}", url),
+                _ => anyhow::bail!("Unknown command in kqs:// URL: {}", url),
             }
         }
         Command::InstallProtocol => {
@@ -868,16 +868,16 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-/// Install the `kq://` URL scheme handler on the current OS.
+/// Install the `kqs://` URL scheme handler on the current OS.
 fn install_protocol() -> Result<()> {
-    let kq_path = std::env::current_exe().context("Cannot determine kq binary path")?;
+    let kqs_path = std::env::current_exe().context("Cannot determine kqs binary path")?;
 
     #[cfg(target_os = "macos")]
     {
-        // On macOS, register kq:// URL scheme via LaunchServices defaults
+        // On macOS, register kqs:// URL scheme via LaunchServices defaults
         // and create a simple handler script
         let handler_script =
-            dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("kq-url-handler.sh");
+            dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("kqs-url-handler.sh");
 
         // Write a handler script that receives the URL as argument
         let log_path = dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("url-handler.log");
@@ -890,7 +890,7 @@ echo "[$(date)] URL=$1" >> "$LOG"
 echo "[$(date)] exit=$?" >> "$LOG"
 "#,
             log_path.display(),
-            kq_path.display()
+            kqs_path.display()
         );
         fs::write(&handler_script, &content)?;
         use std::os::unix::fs::PermissionsExt;
@@ -901,11 +901,11 @@ echo "[$(date)] exit=$?" >> "$LOG"
             r#"import Foundation
 import AppKit
 
-let kq = "{}"
+let kqs = "{}"
 
 func handleURL(_ url: String) {{
     let task = Process()
-    task.launchPath = kq
+    task.launchPath = kqs
     task.arguments = ["handle-url", url]
     try? task.run()
     task.waitUntilExit()
@@ -933,13 +933,13 @@ app.delegate = delegate
 app.setActivationPolicy(.prohibited)
 app.run()
 "#,
-            kq_path.display()
+            kqs_path.display()
         );
         let swift_path = handler_script.with_extension("swift");
 
         fs::write(&swift_path, &swift_src)?;
 
-        let compiled_path = dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("kq-url-handler");
+        let compiled_path = dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("kqs-url-handler");
 
         let status = std::process::Command::new("swiftc")
             .args(["-o", &compiled_path.to_string_lossy(), &swift_path.to_string_lossy()])
@@ -955,23 +955,23 @@ app.run()
                     "com.apple.LaunchServices/com.apple.launchservices.secure",
                     "LSHandlers",
                     "-array-add",
-                    "{LSHandlerURLScheme=kq;LSHandlerRoleAll=com.kq.urlhandler;}",
+                    "{LSHandlerURLScheme=kqs;LSHandlerRoleAll=com.kqs.urlhandler;}",
                 ])
                 .status()?;
             if status.success() {
-                println!("Registered kq:// protocol handler (shell fallback)");
+                println!("Registered kqs:// protocol handler (shell fallback)");
                 println!("NOTE: Some apps may need a restart to recognize the handler.");
             }
         } else {
             // Register the compiled binary with LaunchServices via a minimal .app
             let app_dir =
-                dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join("Applications").join("kq-handler.app");
+                dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join("Applications").join("kqs-handler.app");
 
             let macos_dir = app_dir.join("Contents").join("MacOS");
             fs::create_dir_all(&macos_dir)?;
 
             // Symlink the compiled binary into the .app bundle
-            let symlink_path = macos_dir.join("kq-handler");
+            let symlink_path = macos_dir.join("kqs-handler");
             if symlink_path.exists() {
                 fs::remove_file(&symlink_path).ok();
             }
@@ -982,11 +982,11 @@ app.run()
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key>
-    <string>com.kq.urlhandler</string>
+    <string>com.kqs.urlhandler</string>
     <key>CFBundleName</key>
-    <string>kq URL Handler</string>
+    <string>kqs URL Handler</string>
     <key>CFBundleExecutable</key>
-    <string>kq-handler</string>
+    <string>kqs-handler</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleURLTypes</key>
@@ -994,7 +994,7 @@ app.run()
         <dict>
             <key>CFBundleURLSchemes</key>
             <array>
-                <string>kq</string>
+                <string>kqs</string>
             </array>
         </dict>
     </array>
@@ -1006,7 +1006,7 @@ app.run()
             fs::write(&plist_path, &plist)?;
 
             // Copy the compiled binary (not symlink — codesign needs regular file)
-            let binary_path = macos_dir.join("kq-handler");
+            let binary_path = macos_dir.join("kqs-handler");
             if binary_path.exists() {
                 fs::remove_file(&binary_path).ok();
             }
@@ -1022,8 +1022,8 @@ app.run()
                 .status()?;
 
             if ls_status.success() {
-                println!("Registered kq:// protocol handler at {}", app_dir.display());
-                println!("Now you can use [links](kq://task/move/TASK-001/review) in .md files.");
+                println!("Registered kqs:// protocol handler at {}", app_dir.display());
+                println!("Now you can use [links](kqs://task/move/TASK-001/review) in .md files.");
             }
         }
     }
@@ -1033,27 +1033,27 @@ app.run()
         let reg_script = format!(
             r#"Windows Registry Editor Version 5.00
 
-[HKEY_CLASSES_ROOT\kq]
-@="URL:kq Protocol"
+[HKEY_CLASSES_ROOT\kqs]
+@="URL:kqs Protocol"
 "URL Protocol"=""
 
-[HKEY_CLASSES_ROOT\kq\shell]
+[HKEY_CLASSES_ROOT\kqs\shell]
 
-[HKEY_CLASSES_ROOT\kq\shell\open]
+[HKEY_CLASSES_ROOT\kqs\shell\open]
 
-[HKEY_CLASSES_ROOT\kq\shell\open\command]
+[HKEY_CLASSES_ROOT\kqs\shell\open\command]
 @="\"{}\" handle-url \"%1\""
 "#,
-            kq_path.to_string_lossy().replace('\\', "\\\\")
+            kqs_path.to_string_lossy().replace('\\', "\\\\")
         );
 
         let reg_path =
-            dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("install-kq-protocol.reg");
+            dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("install-kqs-protocol.reg");
 
         fs::create_dir_all(reg_path.parent().unwrap())?;
         fs::write(&reg_path, &reg_script)?;
         println!("Created registration file at {}", reg_path.display());
-        println!("Run the following as Administrator to register kq:// protocol:");
+        println!("Run the following as Administrator to register kqs:// protocol:");
         println!("  regedit /s {}", reg_path.display());
     }
 
@@ -1062,25 +1062,25 @@ app.run()
         let desktop = format!(
             r#"[Desktop Entry]
 Type=Application
-Name=kq URL Handler
+Name=kqs URL Handler
 Exec={} handle-url %u
 StartupNotify=true
-MimeType=x-scheme-handler/kq;
+MimeType=x-scheme-handler/kqs;
 "#,
-            kq_path.display()
+            kqs_path.display()
         );
 
         let desktop_path = dirs::home_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join(".local/share/applications/kq-url-handler.desktop");
+            .join(".local/share/applications/kqs-url-handler.desktop");
 
         fs::create_dir_all(desktop_path.parent().unwrap())?;
         fs::write(&desktop_path, &desktop)?;
         std::process::Command::new("xdg-mime")
-            .args(["default", "kq-url-handler.desktop", "x-scheme-handler/kq"])
+            .args(["default", "kqs-url-handler.desktop", "x-scheme-handler/kqs"])
             .status()
             .context("Failed to register with xdg-mime")?;
-        println!("Registered kq:// protocol handler");
+        println!("Registered kqs:// protocol handler");
     }
 
     Ok(())

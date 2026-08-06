@@ -27,7 +27,7 @@ pub fn new_type(path: &Path, name: &str) -> Result<String> {
     let content = format!(
         r#"import "@typespec/http";
 
-namespace KQ.Data;
+namespace KQS.Data;
 
 model {model_name} {{
   // @doc TZ-001
@@ -158,7 +158,7 @@ pub fn init_main_tsp(path: &Path) -> Result<()> {
         if !content.is_empty() {
             content.push_str("\n\n");
         }
-        content.push_str("namespace KQ.Data;\n");
+        content.push_str("namespace KQS.Data;\n");
 
         content
     };
@@ -243,7 +243,7 @@ mod tests {
 
     fn unique_temp_dir() -> std::path::PathBuf {
         let n = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
-        let dir = std::env::temp_dir().join(format!("kq_typespec_test_{}_{}", std::process::id(), n));
+        let dir = std::env::temp_dir().join(format!("kqs_typespec_test_{}_{}", std::process::id(), n));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         dir
@@ -327,7 +327,7 @@ mod tests {
         let main_path = dir.join("TypeSpec/main.tsp");
         assert!(main_path.exists());
         let content = fs::read_to_string(&main_path).unwrap();
-        assert!(content.contains("namespace KQ.Data;"));
+        assert!(content.contains("namespace KQS.Data;"));
 
         let _ = fs::remove_dir_all(&dir);
     }

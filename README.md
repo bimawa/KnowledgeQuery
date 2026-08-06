@@ -49,7 +49,7 @@ kqs --doc doc new adr "Title"
 kqs check traceability
 
 # Via env
-KQ_MODE=dev kqs check scan
+KQS_MODE=dev kqs check scan
 ```
 
 In dev mode, doc-only commands (`kqs doc new`, `kqs typespec new`, `kqs readme`)
@@ -223,7 +223,7 @@ relevance_threshold = 0.7
 kqs readme
 ```
 
-Generates between the `<!-- kq:start -->` / `<!-- kq:end -->` markers:
+Generates between the `<!-- kqs:start -->` / `<!-- kqs:end -->` markers:
 
 1. **Kanban Board** — tasks by status (todo/in_progress/review/done)
 2. **Table of Contents** — document tree with clickable links

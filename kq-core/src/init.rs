@@ -81,7 +81,7 @@ pub fn init(path: Option<PathBuf>, remote: Option<String>, force: bool) -> Resul
     // 8. Create initial commit
     let tree_oid = index.write_tree().context("Failed to write git tree")?;
     let tree = repo.find_tree(tree_oid).context("Failed to find git tree")?;
-    let signature = git2::Signature::now("kq init", "kq@local").context("Failed to create git signature")?;
+    let signature = git2::Signature::now("kqs init", "kqs@local").context("Failed to create git signature")?;
     repo.commit(
         Some("HEAD"),
         &signature,
@@ -120,7 +120,7 @@ mod tests {
     /// Helper to create a unique temporary directory for each test.
     fn unique_temp_dir() -> PathBuf {
         let n = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
-        let dir = std::env::temp_dir().join(format!("kq_init_test_{}_{}", std::process::id(), n));
+        let dir = std::env::temp_dir().join(format!("kqs_init_test_{}_{}", std::process::id(), n));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         dir

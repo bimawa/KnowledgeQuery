@@ -21,7 +21,7 @@ fn amend_commit_with_readme(repo: &Repository) -> Result<git2::Oid> {
 
     let head_commit = repo.head().context("No HEAD")?.peel_to_commit().context("HEAD not a commit")?;
 
-    let signature = Signature::now("kq", "kq@knowledge").context("Failed to create signature")?;
+    let signature = Signature::now("kqs", "kqs@knowledge").context("Failed to create signature")?;
     let message = format!("docs: update README [{}]", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
 
     let oid = repo
@@ -47,7 +47,7 @@ fn commit_without_readme(repo: &Repository) -> Result<Option<git2::Oid>> {
         return Ok(None);
     }
 
-    let signature = Signature::now("kq", "kq@knowledge").context("Failed to create signature")?;
+    let signature = Signature::now("kqs", "kqs@knowledge").context("Failed to create signature")?;
     let message = format!("docs: auto-sync [{}]", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
 
     let oid = match repo.head() {

@@ -8,8 +8,8 @@ use anyhow::{Context, Result};
 use crate::docs;
 use crate::task::task_list;
 
-const MARKER_START: &str = "<!-- kq:start -->";
-const MARKER_END: &str = "<!-- kq:end -->";
+const MARKER_START: &str = "<!-- kqs:start -->";
+const MARKER_END: &str = "<!-- kqs:end -->";
 
 pub fn generate(repo_path: &Path) -> Result<()> {
     let readme_path = repo_path.join("README.md");
@@ -185,10 +185,10 @@ mod tests {
 
     #[test]
     fn marker_replacement() {
-        let input = "Hello\n<!-- kq:start -->\nold\n<!-- kq:end -->\nWorld";
+        let input = "Hello\n<!-- kqs:start -->\nold\n<!-- kqs:end -->\nWorld";
         let mut out = String::new();
         let tmp = std::env::temp_dir();
-        let repo = tmp.join("kq_readme_test");
+        let repo = tmp.join("kqs_readme_test");
         let _ = std::fs::create_dir_all(&repo.join("docs/01-business-foundation"));
         let _ = std::fs::write(
             repo.join("docs/01-business-foundation/bft-001-test.md"),
@@ -208,7 +208,7 @@ mod tests {
         let input = "# Project\nSome content";
         let mut out = String::new();
         let tmp = std::env::temp_dir();
-        let repo = tmp.join("kq_readme_test2");
+        let repo = tmp.join("kqs_readme_test2");
         let _ = std::fs::create_dir_all(&repo);
         let _ = std::fs::write(repo.join("README.md"), input);
         generate_impl(&repo, input, &mut out).unwrap();
@@ -247,7 +247,7 @@ mod tests {
     #[test]
     fn toc_contains_table_headers() {
         let tmp = std::env::temp_dir();
-        let repo = tmp.join("kq_readme_toc");
+        let repo = tmp.join("kqs_readme_toc");
         let _ = std::fs::create_dir_all(&repo.join("docs/01-business-foundation"));
         let _ = std::fs::write(
             repo.join("docs/01-business-foundation/bft-001-test.md"),

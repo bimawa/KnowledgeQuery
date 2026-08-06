@@ -1,12 +1,12 @@
-/// Generate a comprehensive system prompt for LLMs working with kq.
+/// Generate a comprehensive system prompt for LLMs working with kqs.
 ///
 /// This is auto-generated from the actual codebase state — doc types,
 /// command definitions, and schema. Always current, never stale.
 pub fn generate() -> String {
     let mut out = String::with_capacity(4096);
 
-    out.push_str("# kq — Knowledge Platform CLI\n\n");
-    out.push_str("You are an AI assistant integrated with **kq**, a Git-native knowledge management tool.\n");
+    out.push_str("# kqs — Knowledge Platform CLI\n\n");
+    out.push_str("You are an AI assistant integrated with **kqs**, a Git-native knowledge management tool.\n");
     out.push_str("You create and manage documentation, TypeSpec models, and traceability links.\n\n");
 
     out.push_str("## Modes\n\n");
@@ -15,7 +15,7 @@ pub fn generate() -> String {
     out.push_str("- **dev mode** (auto-detected: no `docs/`, or `--dev` flag)\n");
     out.push_str("  Read-only access to docs: scan, check, notify.\n");
     out.push_str("- **CI mode** (auto: `CI=true` env) — doc mode for automated trace checks.\n");
-    out.push_str("- Override: `kqs --dev <cmd>` or `kqs --doc <cmd>` or `KQ_MODE=dev|doc` env.\n\n");
+    out.push_str("- Override: `kqs --dev <cmd>` or `kqs --doc <cmd>` or `KQS_MODE=dev|doc` env.\n\n");
 
     out.push_str("## Document Types & Hierarchy\n\n");
     out.push_str("Each document has a **type** and **ID** (auto-numbered: BFT-001, ADR-002).\n");
@@ -40,7 +40,7 @@ pub fn generate() -> String {
     out.push_str("Every document starts with YAML front matter. ALWAYS include these fields:\n\n");
     out.push_str("```yaml\n");
     out.push_str("---\n");
-    out.push_str("id: BFT-001          # Auto-assigned by kq. Keep it.\n");
+    out.push_str("id: BFT-001          # Auto-assigned by kqs. Keep it.\n");
     out.push_str("title: \"Meaningful Title\"\n");
     out.push_str("status: Draft | Proposed | Accepted | Approved | Deprecated\n");
     out.push_str("revision: 1           # Increment on semantic changes.\n");
@@ -69,7 +69,7 @@ pub fn generate() -> String {
 
     out.push_str("### Step 2: Create documents\n\n");
     out.push_str("```bash\n");
-    out.push_str("# Create each document type. kq assigns IDs and places files.\n");
+    out.push_str("# Create each document type. kqs assigns IDs and places files.\n");
     out.push_str("kqs doc new bft \"Video Catalog Search\"\n");
     out.push_str("kqs doc new frd \"Video Processing\"\n");
     out.push_str("kqs doc new adr \"PostgreSQL for Metadata\"\n");
@@ -153,7 +153,7 @@ pub fn generate() -> String {
 
     out.push_str("## Rules for You\n\n");
     out.push_str("1. Always `kqs doc new <type> \"title\"` first, then `cat` the result, then rewrite content.\n");
-    out.push_str("2. Never create files directly in `docs/`. Let kq handle paths and IDs.\n");
+    out.push_str("2. Never create files directly in `docs/`. Let kqs handle paths and IDs.\n");
     out.push_str("3. Fill `needs`, `covers`, `code_anchors` in Front Matter for every document.\n");
     out.push_str("4. Always run `kqs check traceability-deep --deep` at the end to verify links.\n");
     out.push_str("5. Run `kqs readme` last to update the Table of Contents.\n");

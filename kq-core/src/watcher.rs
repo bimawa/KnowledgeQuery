@@ -395,7 +395,7 @@ mod tests {
     fn test_is_relevant_event_all_ignored() {
         let event = Event {
             kind: EventKind::Create(CreateKind::File),
-            paths: vec![PathBuf::from("/repo/node_modules/pkg/index.js"), PathBuf::from("/repo/target/debug/kq")],
+            paths: vec![PathBuf::from("/repo/node_modules/pkg/index.js"), PathBuf::from("/repo/target/debug/kqs")],
             attrs: notify::event::EventAttributes::new(),
         };
         assert!(!is_relevant_event(&event, &["node_modules".to_string(), "target".to_string()]));

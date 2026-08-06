@@ -1,4 +1,4 @@
-# Tech Stack Steering: kq
+# Tech Stack Steering: kqs
 
 ## Runtime / Platform
 

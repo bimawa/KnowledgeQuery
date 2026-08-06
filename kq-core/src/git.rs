@@ -33,7 +33,7 @@ pub fn auto_commit(repo: &Repository, dir: &Path) -> Result<Option<Oid>> {
         return Ok(None); // No changes — skip commit
     }
 
-    let signature = Signature::now("kq", "kq@knowledge").context("Failed to create git signature")?;
+    let signature = Signature::now("kqs", "kqs@knowledge").context("Failed to create git signature")?;
 
     let message = format!("docs: auto-sync [{}]", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
 

@@ -19,58 +19,58 @@ pub mod watcher;
 use std::path::Path;
 use std::sync::OnceLock;
 
-/// Operating mode for kq.
+/// Operating mode for kqs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum KqMode {
+pub enum KqsMode {
     /// Running in a developer project — limited read-only ops on docs.
     Dev,
     /// Running in the knowledge repo — full access to all commands.
     Doc,
 }
 
-impl std::fmt::Display for KqMode {
+impl std::fmt::Display for KqsMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            KqMode::Dev => write!(f, "dev"),
-            KqMode::Doc => write!(f, "doc"),
+            KqsMode::Dev => write!(f, "dev"),
+            KqsMode::Doc => write!(f, "doc"),
         }
     }
 }
 
 /// Global mode, set once at startup.
-static CURRENT_MODE: OnceLock<KqMode> = OnceLock::new();
+static CURRENT_MODE: OnceLock<KqsMode> = OnceLock::new();
 
 /// Set the global mode explicitly (from CLI --dev/--doc).
-pub fn set_mode(mode: KqMode) {
+pub fn set_mode(mode: KqsMode) {
     let _ = CURRENT_MODE.set(mode);
 }
 
 /// Get the current mode.
-pub fn mode() -> KqMode {
-    *CURRENT_MODE.get().expect("KqMode not initialized")
+pub fn mode() -> KqsMode {
+    *CURRENT_MODE.get().expect("KqsMode not initialized")
 }
 
 /// Detect mode from environment and filesystem.
-pub fn detect_mode(path: &Path) -> KqMode {
-    if let Ok(val) = std::env::var("KQ_MODE") {
+pub fn detect_mode(path: &Path) -> KqsMode {
+    if let Ok(val) = std::env::var("KQS_MODE") {
         match val.as_str() {
-            "dev" => return KqMode::Dev,
-            "doc" => return KqMode::Doc,
+            "dev" => return KqsMode::Dev,
+            "doc" => return KqsMode::Doc,
             _ => {}
         }
     }
     if std::env::var("CI").map(|v| v == "true").unwrap_or(false) {
-        return KqMode::Doc;
+        return KqsMode::Doc;
     }
     if path.join("docs").exists() && path.join("TypeSpec").exists() {
-        return KqMode::Doc;
+        return KqsMode::Doc;
     }
-    KqMode::Dev
+    KqsMode::Dev
 }
 
 pub fn is_dev() -> bool {
-    mode() == KqMode::Dev
+    mode() == KqsMode::Dev
 }
 pub fn is_doc() -> bool {
-    mode() == KqMode::Doc
+    mode() == KqsMode::Doc
 }
