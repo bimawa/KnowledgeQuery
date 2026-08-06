@@ -362,7 +362,7 @@ pub fn rebuild_trace_graph(path: &Path) -> Result<()> {
             let file_path = path.join(&file.path);
             match file.status {
                 git2::Delta::Added | git2::Delta::Modified => {
-                    if file_path.extension().is_some_and(|e| e == "md" || e == "tsp")
+                    if file_path.extension().is_some_and(|e| e == "md")
                         && let Ok(node) = docs::parse_doc_node(&file_path)
                     {
                         crate::db::upsert_trace_node(
@@ -383,6 +383,24 @@ pub fn rebuild_trace_graph(path: &Path) -> Result<()> {
                         }
                         for target in &node.inline_refs {
                             crate::db::upsert_trace_link(&db, &node.id, target, "references")?;
+                        }
+                    } else if file_path.extension().is_some_and(|e| e == "tsp") {
+                        // TypeSpec changed: re-index all models (upsert + relink)
+                        let models = typespec::list_types(path)?;
+                        for model in &models {
+                            crate::db::upsert_trace_node(
+                                &db,
+                                &model.name,
+                                "typespec",
+                                &model.name,
+                                &format!("TypeSpec/{}", model.file),
+                                1,
+                                "active",
+                                Some("TypeSpec"),
+                            )?;
+                            for target in &model.doc_refs {
+                                crate::db::upsert_trace_link(&db, &model.name, target, "covers")?;
+                            }
                         }
                     }
                 }
@@ -417,6 +435,24 @@ pub fn rebuild_trace_graph(path: &Path) -> Result<()> {
             }
             for target in &node.inline_refs {
                 crate::db::upsert_trace_link(&db, &node.id, target, "references")?;
+            }
+        }
+
+        // Index TypeSpec models as terminating trace nodes, linked to their docs
+        let models = typespec::list_types(path)?;
+        for model in &models {
+            crate::db::upsert_trace_node(
+                &db,
+                &model.name,
+                "typespec",
+                &model.name,
+                &format!("TypeSpec/{}", model.file),
+                1,
+                "active",
+                Some("TypeSpec"),
+            )?;
+            for target in &model.doc_refs {
+                crate::db::upsert_trace_link(&db, &model.name, target, "covers")?;
             }
         }
     }

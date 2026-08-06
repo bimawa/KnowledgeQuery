@@ -59,18 +59,72 @@ pub fn list_types(path: &Path) -> Result<Vec<TypeModel>> {
         if path.extension().is_some_and(|ext| ext == "tsp") {
             let content = fs::read_to_string(&path).with_context(|| format!("Failed to read {}", path.display()))?;
             let file_name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
-
-            let doc_refs = extract_doc_refs(&content);
-
-            for line in content.lines() {
-                if let Some(name) = extract_model_name(line) {
-                    models.push(TypeModel { name, file: file_name.clone(), doc_refs: doc_refs.clone() });
-                }
-            }
+            models.extend(parse_models(&content, &file_name));
         }
     }
 
     Ok(models)
+}
+
+/// Parse TypeSpec models, associating each `// @doc <id>` marker with the model it belongs to:
+/// - a marker inside a model body belongs to that model;
+/// - a marker directly preceding a `model` declaration (outside any block) belongs to that model.
+fn parse_models(content: &str, file_name: &str) -> Vec<TypeModel> {
+    let mut models = Vec::new();
+    let mut depth: usize = 0;
+    let mut opened = false;
+    let mut current: Option<TypeModel> = None;
+    let mut pending_docs: Vec<String> = Vec::new();
+    let mut in_model = false;
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+
+        if let Some(doc) = extract_doc_marker(trimmed) {
+            if in_model {
+                if let Some(m) = current.as_mut()
+                    && !m.doc_refs.iter().any(|r| r == &doc)
+                {
+                    m.doc_refs.push(doc);
+                }
+            } else {
+                pending_docs.push(doc);
+            }
+            continue;
+        }
+
+        if let Some(name) = extract_model_name(trimmed) {
+            let mut model = TypeModel { name, file: file_name.to_string(), doc_refs: Vec::new() };
+            if !pending_docs.is_empty() {
+                model.doc_refs = std::mem::take(&mut pending_docs);
+            }
+            current = Some(model);
+            in_model = true;
+        }
+
+        if in_model {
+            let opens = trimmed.bytes().filter(|b| *b == b'{').count();
+            let closes = trimmed.bytes().filter(|b| *b == b'}').count();
+            if opens > 0 {
+                opened = true;
+            }
+            depth += opens;
+            depth = depth.saturating_sub(closes);
+            if opened && depth == 0 {
+                if let Some(m) = current.take() {
+                    models.push(m);
+                }
+                in_model = false;
+                opened = false;
+            }
+        }
+    }
+
+    if let Some(m) = current.take() {
+        models.push(m);
+    }
+
+    models
 }
 
 pub fn init_main_tsp(path: &Path) -> Result<()> {
@@ -114,6 +168,17 @@ pub fn init_main_tsp(path: &Path) -> Result<()> {
     Ok(())
 }
 
+fn extract_doc_marker(line: &str) -> Option<String> {
+    let line = line.strip_prefix("//")?.trim();
+    let after = line.strip_prefix("@doc ")?;
+    let id: String = after.chars().take_while(|c| !c.is_whitespace()).collect();
+    if id.is_empty() {
+        None
+    } else {
+        Some(id)
+    }
+}
+
 fn collect_imports(ts_dir: &Path) -> Result<Vec<String>> {
     let mut imports = Vec::new();
 
@@ -149,23 +214,6 @@ fn extract_model_name(line: &str) -> Option<String> {
         }
     }
     None
-}
-
-fn extract_doc_refs(content: &str) -> Vec<String> {
-    let mut refs = Vec::new();
-    for line in content.lines() {
-        let trimmed = line.trim();
-        if let Some(after_comment) = trimmed.strip_prefix("//") {
-            let after_comment = after_comment.trim();
-            if let Some(after_doc) = after_comment.strip_prefix("@doc ") {
-                let ref_str: String = after_doc.chars().take_while(|c| !c.is_whitespace()).collect();
-                if !ref_str.is_empty() {
-                    refs.push(ref_str);
-                }
-            }
-        }
-    }
-    refs
 }
 
 fn extract_import(line: &str) -> Option<String> {
@@ -313,10 +361,41 @@ mod tests {
     }
 
     #[test]
-    fn test_extract_doc_refs() {
-        let content = "// @doc TZ-100\nmodel X {}\n// @doc TZ-200\nmodel Y {}";
-        let refs = extract_doc_refs(content);
-        assert_eq!(refs, vec!["TZ-100".to_string(), "TZ-200".to_string()]);
+    fn test_parse_models_marker_before_model() {
+        let models = parse_models("// @doc TZ-100\nmodel X {\n  id: string;\n}\n// @doc TZ-200\nmodel Y {\n  id: string;\n}", "types.tsp");
+        assert_eq!(models.len(), 2);
+        assert_eq!(models[0].name, "X");
+        assert_eq!(models[0].doc_refs, vec!["TZ-100".to_string()]);
+        assert_eq!(models[1].name, "Y");
+        assert_eq!(models[1].doc_refs, vec!["TZ-200".to_string()]);
+    }
+
+    #[test]
+    fn test_parse_models_marker_inside_body() {
+        let models = parse_models("model A {\n  // @doc TZ-001\n  id: string;\n}\nmodel B {\n  id: string;\n}", "types.tsp");
+        assert_eq!(models.len(), 2);
+        assert_eq!(models[0].name, "A");
+        assert_eq!(models[0].doc_refs, vec!["TZ-001".to_string()]);
+        assert_eq!(models[1].name, "B");
+        assert!(models[1].doc_refs.is_empty());
+    }
+
+    #[test]
+    fn test_parse_models_single_line_and_no_markers() {
+        let models = parse_models("model P {\n  id: string;\n}\nmodel Q { name: string; }\n", "types.tsp");
+        assert_eq!(models.len(), 2);
+        assert!(models.iter().all(|m| m.doc_refs.is_empty()));
+    }
+
+    #[test]
+    fn test_parse_models_distinct_refs_per_model() {
+        let models = parse_models(
+            "// @doc tz-002-\nmodel Festival {\n  id: string;\n}\n// @doc tz-004-\nmodel Quest {\n  id: string;\n}",
+            "models.tsp",
+        );
+        assert_eq!(models.len(), 2);
+        assert_eq!(models[0].doc_refs, vec!["tz-002-".to_string()]);
+        assert_eq!(models[1].doc_refs, vec!["tz-004-".to_string()]);
     }
 
     #[test]

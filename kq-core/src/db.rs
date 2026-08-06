@@ -195,9 +195,11 @@ pub fn set_last_indexed_commit(conn: &Connection, commit: &str) -> Result<()> {
 /// Retrieve the last indexed git commit hash, if any.
 pub fn get_last_indexed_commit(conn: &Connection) -> Result<Option<String>> {
     let result =
-        conn.query_row("SELECT last_indexed_commit FROM schema_version WHERE version = 1", [], |row| row.get(0));
+        conn.query_row("SELECT last_indexed_commit FROM schema_version WHERE version = 1", [], |row| {
+            row.get::<_, Option<String>>(0)
+        });
     match result {
-        Ok(commit) => Ok(Some(commit)),
+        Ok(commit) => Ok(commit),
         Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
         Err(e) => Err(e.into()),
     }
