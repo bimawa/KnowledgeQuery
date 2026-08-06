@@ -1,0 +1,15 @@
+{
+  "id": "code-anchors-cross-repo",
+  "title": "Code Anchors & Cross-Repos Scanning",
+  "status": "complete",
+  "phase": "implementation",
+  "language": "ru",
+  "priority": "P0",
+  "effort": "XL",
+  "depends_on": [
+    "trace-graph-db"
+  ],
+  "wave": 2,
+  "created": "2026-07-11",
+  "updated": "2026-07-15"
+}

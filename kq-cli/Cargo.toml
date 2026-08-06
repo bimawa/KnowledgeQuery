@@ -1,0 +1,16 @@
+[package]
+name = "kq-cli"
+edition.workspace = true
+
+[dependencies]
+clap.workspace = true
+anyhow.workspace = true
+dirs.workspace = true
+tokio.workspace = true
+kq-core = { path = "../kq-core" }
+kq-config = { path = "../kq-config" }
+  kq-llm = { path = "../kq-llm" }
+  kq-embeddings = { path = "../kq-embeddings" }
+[[bin]]
+name = "kq"
+path = "src/main.rs"

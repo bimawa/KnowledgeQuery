@@ -1,0 +1,22 @@
+{
+  "feature_name": "kq-knowledge-platform",
+  "created_at": "2026-07-09T11:00:00+03:00",
+  "updated_at": "2026-07-09T14:00:00+03:00",
+  "language": "ru",
+  "phase": "implementation",
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": true,
+      "approved": true
+    },
+    "tasks": {
+      "generated": true,
+      "approved": true
+    }
+  },
+  "ready_for_implementation": true
+}

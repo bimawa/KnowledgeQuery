@@ -1,0 +1,35 @@
+# Rust build artifacts
+/target
+**/*.rs.bk
+
+# Cargo.lock is included for binaries (kq-cli is a binary)
+# For libraries, it's typically omitted, but we keep it for reproducibility
+Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+
+# Editor swap files
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Python
+*.pyc
+__pycache__/
+
+# Downloaded embedding models
+/models/
+
+# Local knowledge graph state
+.kq/
+
+/.crew/
+/.crew
+!.crew/artifacts/
+!.crew/graphs/
+!.crew/artifacts/.gitkeep
+!.crew/graphs/.gitkeep

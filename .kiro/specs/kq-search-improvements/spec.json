@@ -1,0 +1,9 @@
+{
+  "id": "kq-search-improvements",
+  "title": "Search: auto-index, vector search, embedding update",
+  "status": "complete",
+  "phase": "implementation",
+  "language": "ru",
+  "created": "2026-07-15",
+  "updated": "2026-07-15"
+}

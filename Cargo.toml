@@ -1,0 +1,36 @@
+[workspace]
+resolver = "3"
+members = ["kq-cli", "kq-core", "kq-embeddings", "kq-llm", "kq-config"]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+authors = ["kq team"]
+
+[workspace.dependencies]
+clap = { version = "4", features = ["derive"] }
+git2 = "0.19"
+notify = "7"
+rusqlite = { version = "0.32", features = ["bundled", "vtab"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json", "stream"] }
+candle-core = "0.8"
+candle-nn = "0.8"
+candle-transformers = "0.8"
+hf-hub = "0.4"
+tokenizers = "0.21"
+sqlite-vec = "0.1"
+anyhow = "1"
+thiserror = "2"
+chrono = { version = "0.4", features = ["serde"] }
+sha2 = "0.10"
+dirs = "6"
+tempfile = "3"
+serde_yaml = "0.9"
+
+tokio-stream = "0.1"
+regex = "1"
+async-trait = "0.1"

@@ -1,0 +1,19 @@
+{
+  "id": "kq-dual-mode",
+  "title": "Dual Mode: Dev Context & Doc Context",
+  "status": "complete",
+  "phase": "implementation",
+  "language": "ru",
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": true,
+      "approved": true
+    }
+  },
+  "created": "2026-07-14",
+  "updated": "2026-07-15"
+}

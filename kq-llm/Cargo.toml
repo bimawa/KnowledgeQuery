@@ -1,0 +1,13 @@
+[package]
+name = "kq-llm"
+edition.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tokio-stream.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true

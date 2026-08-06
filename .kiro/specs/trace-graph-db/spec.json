@@ -1,0 +1,13 @@
+{
+  "id": "trace-graph-db",
+  "title": "Trace Graph Database & Deep Coverage",
+  "status": "complete",
+  "phase": "implementation",
+  "language": "ru",
+  "priority": "P0",
+  "effort": "L",
+  "depends_on": [],
+  "wave": 1,
+  "created": "2026-07-11",
+  "updated": "2026-07-15"
+}

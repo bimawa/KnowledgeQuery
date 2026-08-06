@@ -1,0 +1,2 @@
+# No extra config needed for now; default clippy rules apply.
+# Use -- -D warnings at build time to deny all warnings.
