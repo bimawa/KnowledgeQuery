@@ -140,10 +140,28 @@ impl KnowledgeConfig {
 
 /// Default file patterns for code anchor scanning.
 pub const DEFAULT_SCAN_PATTERNS: &[&str] = &[
-    "**/*.rs", "**/*.go", "**/*.swift", "**/*.kt", "**/*.java",
-    "**/*.py", "**/*.rb", "**/*.ts", "**/*.js", "**/*.tsx", "**/*.jsx",
-    "**/*.c", "**/*.cpp", "**/*.h", "**/*.hpp", "**/*.m", "**/*.mm",
-    "**/*.sh", "**/*.yaml", "**/*.yml", "**/*.html", "**/*.xml",
+    "**/*.rs",
+    "**/*.go",
+    "**/*.swift",
+    "**/*.kt",
+    "**/*.java",
+    "**/*.py",
+    "**/*.rb",
+    "**/*.ts",
+    "**/*.js",
+    "**/*.tsx",
+    "**/*.jsx",
+    "**/*.c",
+    "**/*.cpp",
+    "**/*.h",
+    "**/*.hpp",
+    "**/*.m",
+    "**/*.mm",
+    "**/*.sh",
+    "**/*.yaml",
+    "**/*.yml",
+    "**/*.html",
+    "**/*.xml",
 ];
 
 /// Configuration for a linked project repository.
@@ -162,20 +180,14 @@ pub struct ProjectConfig {
 impl ProjectConfig {
     /// Returns the scan patterns, falling back to defaults if empty.
     pub fn effective_scan_patterns(&self) -> &[String] {
-        if !self.scan_patterns.is_empty() {
-            &self.scan_patterns
-        } else {
-            get_default_scan_patterns_str()
-        }
+        if !self.scan_patterns.is_empty() { &self.scan_patterns } else { get_default_scan_patterns_str() }
     }
 }
 
 /// Static default scan patterns as Strings (lazy-init).
 static DEFAULT_SCAN_PATTERNS_STR: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
 fn get_default_scan_patterns_str() -> &'static Vec<String> {
-    DEFAULT_SCAN_PATTERNS_STR.get_or_init(|| {
-        DEFAULT_SCAN_PATTERNS.iter().map(|s| s.to_string()).collect()
-    })
+    DEFAULT_SCAN_PATTERNS_STR.get_or_init(|| DEFAULT_SCAN_PATTERNS.iter().map(|s| s.to_string()).collect())
 }
 
 fn default_scan_patterns() -> Vec<String> {

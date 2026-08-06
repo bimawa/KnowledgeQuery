@@ -9,7 +9,8 @@ use tokio::sync::mpsc;
 use kq_config::KnowledgeConfig;
 
 /// Directories whose contents are always ignored during file watching.
-const DEFAULT_IGNORE_DIRS: &[&str] = &[".git", ".obsidian", "node_modules", "target", "db.sqlite", "state.db", "model-cache"];
+const DEFAULT_IGNORE_DIRS: &[&str] =
+    &[".git", ".obsidian", "node_modules", "target", "db.sqlite", "state.db", "model-cache"];
 
 /// A filtered filesystem event produced by the notify watcher.
 #[derive(Debug)]
@@ -88,10 +89,10 @@ fn is_relevant_event(event: &Event, ignore_dirs: &[String]) -> bool {
 /// 3. Re-indexes changed files in the knowledge database.
 fn handle_debounce_tick(dir: &Path) {
     // 1. Regenerate README from task files
-    if dir.join(".kq").is_dir() {
-        if let Err(e) = crate::readme_gen::generate(dir) {
-            eprintln!("[kq] README generation skipped: {e:#}");
-        }
+    if dir.join(".kq").is_dir()
+        && let Err(e) = crate::readme_gen::generate(dir)
+    {
+        eprintln!("[kq] README generation skipped: {e:#}");
     }
 
     let repo = match crate::git::open_repo(dir) {
@@ -197,10 +198,10 @@ pub async fn start_watch(config: &KnowledgeConfig) -> Result<()> {
 
         let mut watcher: PollWatcher = match PollWatcher::new(
             move |res: std::result::Result<Event, notify::Error>| {
-                if let Ok(event) = res {
-                    if is_relevant_event(&event, &ignores) {
-                        let _ = event_tx.send(FileEvent { paths: event.paths, kind: event.kind });
-                    }
+                if let Ok(event) = res
+                    && is_relevant_event(&event, &ignores)
+                {
+                    let _ = event_tx.send(FileEvent { paths: event.paths, kind: event.kind });
                 }
             },
             config,
@@ -309,7 +310,11 @@ mod tests {
         let tmp = tempfile::TempDir::new().unwrap();
         let mut config = KnowledgeConfig::default();
         config.knowledge_path = tmp.path().to_path_buf();
-        config.projects.push(kq_config::ProjectConfig { path: tmp.path().to_path_buf(), label: None, scan_patterns: vec![] });
+        config.projects.push(kq_config::ProjectConfig {
+            path: tmp.path().to_path_buf(),
+            label: None,
+            scan_patterns: vec![],
+        });
         let paths = collect_watch_paths(&config);
         assert_eq!(paths.len(), 1);
     }

@@ -76,16 +76,14 @@ fn parse_event(content: &str) -> Result<TaskEvent> {
         .and_then(|s| s.split_once("\n---"))
         .map(|(yaml, _)| yaml)
         .ok_or_else(|| anyhow::anyhow!("Event file missing YAML frontmatter"))?;
-    let event: TaskEvent = serde_yaml::from_str(stripped)
-        .context("Failed to parse event frontmatter")?;
+    let event: TaskEvent = serde_yaml::from_str(stripped).context("Failed to parse event frontmatter")?;
     Ok(event)
 }
 
 /// Write an event file to `.kq/events/<task_id>/`.
 fn write_event(repo_path: &Path, task_id: &str, op: &str, value: &str) -> Result<TaskEvent> {
     let events_dir = repo_path.join(".kq/events").join(task_id);
-    fs::create_dir_all(&events_dir)
-        .context("Failed to create events directory")?;
+    fs::create_dir_all(&events_dir).context("Failed to create events directory")?;
 
     let timestamp = chrono::Utc::now().format("%Y%m%dT%H%M%SZ").to_string();
     let filename = format!("{}-{}-{}.md", timestamp, op, value);
@@ -101,8 +99,7 @@ fn write_event(repo_path: &Path, task_id: &str, op: &str, value: &str) -> Result
     let yaml = serde_yaml::to_string(&event).context("Failed to serialize event")?;
     let content = format!("---\n{}---\n\n# {}: {} — {}\n", yaml, task_id, op, value);
 
-    fs::write(&file_path, &content)
-        .with_context(|| format!("Failed to write event {}", file_path.display()))?;
+    fs::write(&file_path, &content).with_context(|| format!("Failed to write event {}", file_path.display()))?;
 
     Ok(event)
 }
@@ -124,12 +121,9 @@ pub fn user_create(username: &str, display_name: Option<&str>) -> Result<String>
 
     let name = display_name.unwrap_or(username);
     let date = chrono::Utc::now().format("%Y-%m-%d").to_string();
-    let content = format!(
-        "---\nusername: {}\nname: {}\ncreated: {}\nrole: member\n---\n\n# {}\n\n",
-        username, name, date, name
-    );
-    fs::write(&file_path, &content)
-        .with_context(|| format!("Failed to write user file {}", file_path.display()))?;
+    let content =
+        format!("---\nusername: {}\nname: {}\ncreated: {}\nrole: member\n---\n\n# {}\n\n", username, name, date, name);
+    fs::write(&file_path, &content).with_context(|| format!("Failed to write user file {}", file_path.display()))?;
 
     Ok(username.to_string())
 }
@@ -146,18 +140,20 @@ pub fn user_list() -> Result<Vec<(String, String)>> {
     for entry in fs::read_dir(&users_dir).context("Failed to read users directory")? {
         let entry = entry?;
         let path = entry.path();
-        if path.extension().is_some_and(|ext| ext == "md") {
-            if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                let content = fs::read_to_string(&path).unwrap_or_default();
-                let name = if let Some(stripped) = content.strip_prefix("---\n")
-                    .and_then(|s| s.split_once("\n---"))
-                {
-                    if let Ok(fm) = serde_yaml::from_str::<std::collections::HashMap<String, String>>(stripped.0) {
-                        fm.get("name").cloned().unwrap_or_else(|| stem.to_string())
-                    } else { stem.to_string() }
-                } else { stem.to_string() };
-                users.push((stem.to_string(), name));
-            }
+        if path.extension().is_some_and(|ext| ext == "md")
+            && let Some(stem) = path.file_stem().and_then(|s| s.to_str())
+        {
+            let content = fs::read_to_string(&path).unwrap_or_default();
+            let name = if let Some(stripped) = content.strip_prefix("---\n").and_then(|s| s.split_once("\n---")) {
+                if let Ok(fm) = serde_yaml::from_str::<std::collections::HashMap<String, String>>(stripped.0) {
+                    fm.get("name").cloned().unwrap_or_else(|| stem.to_string())
+                } else {
+                    stem.to_string()
+                }
+            } else {
+                stem.to_string()
+            };
+            users.push((stem.to_string(), name));
         }
     }
     users.sort();
@@ -171,8 +167,7 @@ pub fn user_show(username: &str) -> Result<String> {
     if !file_path.exists() {
         bail!("User '{}' not found", username);
     }
-    let content = fs::read_to_string(&file_path)
-        .with_context(|| format!("Failed to read {}", file_path.display()))?;
+    let content = fs::read_to_string(&file_path).with_context(|| format!("Failed to read {}", file_path.display()))?;
     Ok(content)
 }
 
@@ -224,9 +219,7 @@ impl FromStr for Status {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let normalized = s.trim().to_lowercase()
-            .replace(' ', "_")
-            .replace('-', "_");
+        let normalized = s.trim().to_lowercase().replace([' ', '-'], "_");
         match normalized.as_str() {
             "todo" => Ok(Self::Todo),
             "in_progress" => Ok(Self::InProgress),
@@ -286,8 +279,6 @@ pub struct Task {
     pub created: NaiveDate,
     pub updated: NaiveDate,
 }
-
-
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -379,10 +370,10 @@ fn read_task_file(path: &Path) -> Result<Task> {
             assignee = val.trim().trim_matches(|c: char| c == '"' || c == '\'').to_string();
         } else if let Some(val) = line.strip_prefix("status: ") {
             status = val.trim().parse().unwrap_or(Status::Todo);
-        } else if let Some(val) = line.strip_prefix("updated: ") {
-            if let Ok(d) = NaiveDate::parse_from_str(val.trim(), "%Y-%m-%d") {
-                updated = d;
-            }
+        } else if let Some(val) = line.strip_prefix("updated: ")
+            && let Ok(d) = NaiveDate::parse_from_str(val.trim(), "%Y-%m-%d")
+        {
+            updated = d;
         }
     }
 
@@ -415,11 +406,7 @@ pub fn task_new(title: &str, status: Status, priority: Priority, assignee: &str)
     let today = chrono::Utc::now().date_naive();
 
     // Minimal frontmatter — no status/assignee
-    let frontmatter = Frontmatter {
-        title: title.to_string(),
-        priority: priority.clone(),
-        created: today,
-    };
+    let frontmatter = Frontmatter { title: title.to_string(), priority: priority.clone(), created: today };
 
     let file_path = tasks_dir.join(format!("{}.md", id));
     write_task_file(&file_path, &frontmatter, &id, title)?;
@@ -459,28 +446,28 @@ pub(crate) fn update_task_refs(repo: &Path, id: &str) -> Result<()> {
     let state = replay_events(&repo.join(".kq/events").join(id)).unwrap_or_default();
 
     // Extract immutable fields from existing frontmatter
-    let (orig_title, orig_priority, orig_created) = if let Some(rest) = content.strip_prefix("---\n")
-        .and_then(|s| s.split_once("\n---\n"))
-    {
-        let (fm, _) = rest;
-        let mut title = String::new();
-        let mut priority = "P2".to_string();
-        let mut created = String::new();
-        for line in fm.lines() {
-            if let Some(val) = line.strip_prefix("title: ") {
-                title = val.trim_matches('"').to_string();
-            } else if let Some(val) = line.strip_prefix("priority: ") {
-                priority = val.to_string();
-            } else if let Some(val) = line.strip_prefix("created: ") {
-                created = val.to_string();
+    let (orig_title, orig_priority, orig_created) =
+        if let Some(rest) = content.strip_prefix("---\n").and_then(|s| s.split_once("\n---\n")) {
+            let (fm, _) = rest;
+            let mut title = String::new();
+            let mut priority = "P2".to_string();
+            let mut created = String::new();
+            for line in fm.lines() {
+                if let Some(val) = line.strip_prefix("title: ") {
+                    title = val.trim_matches('"').to_string();
+                } else if let Some(val) = line.strip_prefix("priority: ") {
+                    priority = val.to_string();
+                } else if let Some(val) = line.strip_prefix("created: ") {
+                    created = val.to_string();
+                }
             }
-        }
-        (title, priority, created)
-    } else {
-        (String::from("Task"), "P2".to_string(), chrono::Utc::now().date_naive().to_string())
-    };
+            (title, priority, created)
+        } else {
+            (String::from("Task"), "P2".to_string(), chrono::Utc::now().date_naive().to_string())
+        };
 
-    let created_date = NaiveDate::parse_from_str(&orig_created, "%Y-%m-%d").unwrap_or_else(|_| chrono::Utc::now().date_naive());
+    let created_date =
+        NaiveDate::parse_from_str(&orig_created, "%Y-%m-%d").unwrap_or_else(|_| chrono::Utc::now().date_naive());
     let priority_enum: Priority = orig_priority.parse().unwrap_or(Priority::P2);
 
     let updated_str = if state.updated.len() >= 8 {
@@ -526,7 +513,6 @@ struct FrontmatterWithState {
     assign: Option<String>,
     status: String,
 }
-
 
 /// Assign a task to a user. Creates an assign event.
 /// Assign a task to a user. Creates an assign event and updates @refs in the .md body.

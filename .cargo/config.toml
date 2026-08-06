@@ -1,0 +1,4 @@
+[env]
+# Homebrew openssl@4 (via git2/openssl-sys) is built for macOS 26;
+# match it instead of rustc's default macOS-11.0 deployment target.
+MACOSX_DEPLOYMENT_TARGET = "26.0"

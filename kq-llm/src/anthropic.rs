@@ -28,11 +28,7 @@ impl AnthropicProvider {
             .or_else(|| std::env::var("ANTHROPIC_API_KEY").ok())
             .context("Anthropic API key not provided and ANTHROPIC_API_KEY not set")?;
 
-        Ok(Self {
-            client: Client::new(),
-            model,
-            api_key: key,
-        })
+        Ok(Self { client: Client::new(), model, api_key: key })
     }
 }
 
@@ -100,14 +96,12 @@ impl LlmProvider for AnthropicProvider {
                 }
 
                 let data = &line[6..];
-                if let Ok(event) = serde_json::from_str::<ContentBlockDelta>(data) {
-                    if let Some(delta) = event.delta {
-                        if let Some(text) = delta.text {
-                            if tx.send(text).is_err() {
-                                return Ok(());
-                            }
-                        }
-                    }
+                if let Ok(event) = serde_json::from_str::<ContentBlockDelta>(data)
+                    && let Some(delta) = event.delta
+                    && let Some(text) = delta.text
+                    && tx.send(text).is_err()
+                {
+                    return Ok(());
                 }
             }
         }

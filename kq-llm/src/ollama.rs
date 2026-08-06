@@ -55,13 +55,7 @@ impl LlmProvider for OllamaProvider {
         });
 
         let url = format!("{}/api/generate", self.endpoint);
-        let response = self
-            .client
-            .post(&url)
-            .json(&body)
-            .send()
-            .await
-            .context("Failed to connect to Ollama")?;
+        let response = self.client.post(&url).json(&body).send().await.context("Failed to connect to Ollama")?;
 
         if !response.status().is_success() {
             let status = response.status();
@@ -77,12 +71,12 @@ impl LlmProvider for OllamaProvider {
             if line.is_empty() {
                 continue;
             }
-            let chunk: OllamaChunk = serde_json::from_str(&line)
-                .with_context(|| format!("Failed to parse Ollama chunk: {}", line))?;
-            if let Some(text) = chunk.response {
-                if tx.send(text).is_err() {
-                    break;
-                }
+            let chunk: OllamaChunk =
+                serde_json::from_str(&line).with_context(|| format!("Failed to parse Ollama chunk: {}", line))?;
+            if let Some(text) = chunk.response
+                && tx.send(text).is_err()
+            {
+                break;
             }
             if chunk.done {
                 break;

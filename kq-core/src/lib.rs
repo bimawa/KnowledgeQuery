@@ -68,5 +68,9 @@ pub fn detect_mode(path: &Path) -> KqMode {
     KqMode::Dev
 }
 
-pub fn is_dev() -> bool { mode() == KqMode::Dev }
-pub fn is_doc() -> bool { mode() == KqMode::Doc }
+pub fn is_dev() -> bool {
+    mode() == KqMode::Dev
+}
+pub fn is_doc() -> bool {
+    mode() == KqMode::Doc
+}

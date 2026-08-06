@@ -6,21 +6,20 @@ use std::path::Path;
 use anyhow::{Context, Result};
 
 use crate::docs;
-use crate::task::{task_list, Status};
+use crate::task::task_list;
 
 const MARKER_START: &str = "<!-- kq:start -->";
 const MARKER_END: &str = "<!-- kq:end -->";
 
 pub fn generate(repo_path: &Path) -> Result<()> {
     let readme_path = repo_path.join("README.md");
-    let content = fs::read_to_string(&readme_path)
-        .with_context(|| format!("Failed to read {}", readme_path.display()))?;
+    let content =
+        fs::read_to_string(&readme_path).with_context(|| format!("Failed to read {}", readme_path.display()))?;
     let mut output = String::with_capacity(content.len() + 4096);
     generate_impl(repo_path, &content, &mut output)?;
 
     if output != content {
-        fs::write(&readme_path, output)
-            .with_context(|| format!("Failed to write {}", readme_path.display()))?;
+        fs::write(&readme_path, output).with_context(|| format!("Failed to write {}", readme_path.display()))?;
     }
 
     Ok(())
@@ -28,8 +27,8 @@ pub fn generate(repo_path: &Path) -> Result<()> {
 
 pub fn generate_to(repo_path: &Path, writer: &mut dyn Write) -> Result<()> {
     let readme_path = repo_path.join("README.md");
-    let content = fs::read_to_string(&readme_path)
-        .with_context(|| format!("Failed to read {}", readme_path.display()))?;
+    let content =
+        fs::read_to_string(&readme_path).with_context(|| format!("Failed to read {}", readme_path.display()))?;
     generate_impl(repo_path, &content, writer)
 }
 
@@ -69,7 +68,7 @@ fn build_doc_toc(repo_path: &Path) -> Result<String> {
     for (cat, filepath) in &doc_files {
         let path = Path::new(filepath);
         let rel_str = filepath
-            .strip_prefix(&repo_path.to_string_lossy().as_ref())
+            .strip_prefix(repo_path.to_string_lossy().as_ref())
             .and_then(|s| s.strip_prefix('/'))
             .unwrap_or(filepath)
             .to_string();
@@ -79,7 +78,9 @@ fn build_doc_toc(repo_path: &Path) -> Result<String> {
                 if *cat != current_category {
                     current_category = cat.clone();
                     cat_count += 1;
-                    if cat_count > 1 { writeln!(out)?; }
+                    if cat_count > 1 {
+                        writeln!(out)?;
+                    }
                     let cat_label = docs::category_label(cat);
                     writeln!(out, "**📁 {cat_label}**")?;
                     writeln!(out, "| ID | Title | Status |")?;
@@ -106,7 +107,9 @@ fn build_doc_toc(repo_path: &Path) -> Result<String> {
                 if *cat != current_category {
                     current_category = cat.clone();
                     cat_count += 1;
-                    if cat_count > 1 { writeln!(out)?; }
+                    if cat_count > 1 {
+                        writeln!(out)?;
+                    }
                     let cat_label = docs::category_label(cat);
                     writeln!(out, "**📁 {cat_label}**")?;
                     writeln!(out, "| ID | Title | Status |")?;
@@ -187,8 +190,10 @@ mod tests {
         let tmp = std::env::temp_dir();
         let repo = tmp.join("kq_readme_test");
         let _ = std::fs::create_dir_all(&repo.join("docs/01-business-foundation"));
-        let _ = std::fs::write(repo.join("docs/01-business-foundation/bft-001-test.md"),
-            "---\nid: BFT-001\ntitle: Test\nstatus: Draft\n---\n# Test\n");
+        let _ = std::fs::write(
+            repo.join("docs/01-business-foundation/bft-001-test.md"),
+            "---\nid: BFT-001\ntitle: Test\nstatus: Draft\n---\n# Test\n",
+        );
         generate_impl(&repo, input, &mut out).unwrap();
         assert!(out.contains(MARKER_START));
         assert!(out.contains(MARKER_END));

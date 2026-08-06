@@ -2,10 +2,8 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use std::path::PathBuf;
 
 const TEMPLATES_SUBDIR: &str = ".kq/templates";
-
 
 const GROK_CATEGORIES: &[(&str, &str)] = &[
     ("01-business-foundation", "Business Foundation"),
@@ -50,11 +48,7 @@ const DOC_CATEGORY_MAP: &[(&str, &str)] = &[
 
 /// Get the human-readable label for a category slug.
 pub fn category_label(slug: &str) -> &str {
-    GROK_CATEGORIES
-        .iter()
-        .find(|(s, _)| *s == slug)
-        .map(|(_, n)| *n)
-        .unwrap_or(slug)
+    GROK_CATEGORIES.iter().find(|(s, _)| *s == slug).map(|(_, n)| *n).unwrap_or(slug)
 }
 
 /// Document type determined from file path prefix.
@@ -122,7 +116,6 @@ pub fn detect_doc_type(filename: &str) -> Option<DocType> {
     None
 }
 
-
 /// Parsed traceable document node from a .md file.
 #[derive(Debug, Clone)]
 pub struct DocNode {
@@ -159,11 +152,7 @@ fn parse_front_matter(content: &str) -> serde_yaml::Value {
 /// Parse inline @doc references from markdown content (after front matter).
 fn parse_inline_doc_refs(content: &str) -> Vec<String> {
     let body = if content.starts_with("---") {
-        if let Some(end) = content[4..].find("\n---\n") {
-            &content[4 + end + 5..]
-        } else {
-            content
-        }
+        if let Some(end) = content[4..].find("\n---\n") { &content[4 + end + 5..] } else { content }
     } else {
         content
     };
@@ -184,43 +173,62 @@ fn parse_inline_doc_refs(content: &str) -> Vec<String> {
 /// Parse a traceable document node from a .md file.
 /// Extracts Front Matter + inline @doc references.
 pub fn parse_doc_node(path: &Path) -> Result<DocNode> {
-    let content = fs::read_to_string(path)
-        .with_context(|| format!("Failed to read {}", path.display()))?;
+    let content = fs::read_to_string(path).with_context(|| format!("Failed to read {}", path.display()))?;
     let file_path = path.to_string_lossy().to_string();
-    let filename = path.file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("")
-        .to_string();
+    let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
     let doc_type = detect_doc_type(&filename)
         .ok_or_else(|| anyhow::anyhow!("Cannot detect doc type from filename: {}", filename))?;
     let fm = parse_front_matter(&content);
-    let title = fm.get("title")
-        .and_then(|v| v.as_str()).unwrap_or("Untitled").to_string();
-    let status = fm.get("status")
-        .and_then(|v| v.as_str()).unwrap_or("Draft").to_string();
-    let revision: u32 = fm.get("revision")
-        .and_then(|v| v.as_str()).and_then(|s| s.parse().ok()).unwrap_or(1);
+    let title = fm.get("title").and_then(|v| v.as_str()).unwrap_or("Untitled").to_string();
+    let status = fm.get("status").and_then(|v| v.as_str()).unwrap_or("Draft").to_string();
+    let revision: u32 = fm.get("revision").and_then(|v| v.as_str()).and_then(|s| s.parse().ok()).unwrap_or(1);
     let category = fm.get("category").and_then(|v| v.as_str()).map(String::from);
-    let needs = fm.get("needs").and_then(|v| v.as_sequence())
+    let needs = fm
+        .get("needs")
+        .and_then(|v| v.as_sequence())
         .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
         .unwrap_or_default();
-    let covers = fm.get("covers").and_then(|v| v.as_sequence())
+    let covers = fm
+        .get("covers")
+        .and_then(|v| v.as_sequence())
         .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
         .unwrap_or_default();
-    let bft_refs = fm.get("bft_refs").and_then(|v| v.as_sequence())
+    let bft_refs = fm
+        .get("bft_refs")
+        .and_then(|v| v.as_sequence())
         .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
         .unwrap_or_default();
-    let rfc_refs = fm.get("rfc_refs").and_then(|v| v.as_sequence())
+    let rfc_refs = fm
+        .get("rfc_refs")
+        .and_then(|v| v.as_sequence())
         .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
         .unwrap_or_default();
-    let code_anchors = fm.get("code_anchors").and_then(|v| v.as_sequence())
+    let code_anchors = fm
+        .get("code_anchors")
+        .and_then(|v| v.as_sequence())
         .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
         .unwrap_or_default();
     let inline_refs = parse_inline_doc_refs(&content);
-    let id = fm.get("id").and_then(|v| v.as_str()).map(String::from)
+    let id = fm
+        .get("id")
+        .and_then(|v| v.as_str())
+        .map(String::from)
         .unwrap_or_else(|| filename.strip_suffix(".md").unwrap_or(&filename).to_string());
-    Ok(DocNode { id, doc_type, title, file_path, revision, status, category,
-        needs, covers, bft_refs, rfc_refs, code_anchors, inline_refs })
+    Ok(DocNode {
+        id,
+        doc_type,
+        title,
+        file_path,
+        revision,
+        status,
+        category,
+        needs,
+        covers,
+        bft_refs,
+        rfc_refs,
+        code_anchors,
+        inline_refs,
+    })
 }
 
 /// List all doc files in the knowledge repo with their auto-detected type.
@@ -237,13 +245,11 @@ pub fn list_doc_nodes(path: &Path) -> Result<Vec<DocNode>> {
 
 pub fn init_with_docs(path: &Path) -> Result<()> {
     let docs_dir = path.join("docs");
-    fs::create_dir_all(&docs_dir)
-        .with_context(|| format!("Failed to create docs/ at {}", docs_dir.display()))?;
+    fs::create_dir_all(&docs_dir).with_context(|| format!("Failed to create docs/ at {}", docs_dir.display()))?;
 
     for (slug, _name) in GROK_CATEGORIES {
         let category_dir = docs_dir.join(slug);
-        fs::create_dir_all(&category_dir)
-            .with_context(|| format!("Failed to create docs/{}/", slug))?;
+        fs::create_dir_all(&category_dir).with_context(|| format!("Failed to create docs/{}/", slug))?;
     }
 
     Ok(())
@@ -251,9 +257,7 @@ pub fn init_with_docs(path: &Path) -> Result<()> {
 
 pub fn generate_doc(path: &Path, doc_type: &str, title: &str) -> Result<String> {
     // Support any type: known DOC_TYPES OR custom template file
-    let type_label = if DOC_TYPES.iter().any(|(t, _)| *t == doc_type) {
-        DOC_TYPES.iter().find(|(t, _)| *t == doc_type).map(|(_, l)| *l).unwrap_or("Document")
-    } else {
+    if !DOC_TYPES.iter().any(|(t, _)| *t == doc_type) {
         let template_file = path.join(TEMPLATES_SUBDIR).join(format!("{}.md", doc_type));
         if !template_file.exists() {
             anyhow::bail!(
@@ -263,27 +267,17 @@ pub fn generate_doc(path: &Path, doc_type: &str, title: &str) -> Result<String> 
                 doc_type
             );
         }
-        "Custom Document"
-    };
+    }
 
-    let category = DOC_CATEGORY_MAP
-        .iter()
-        .find(|(t, _)| *t == doc_type)
-        .map(|(_, c)| *c)
-        .unwrap_or("05-ideas");
+    let category = DOC_CATEGORY_MAP.iter().find(|(t, _)| *t == doc_type).map(|(_, c)| *c).unwrap_or("05-ideas");
 
-    let category_label = GROK_CATEGORIES
-        .iter()
-        .find(|(s, _)| *s == category)
-        .map(|(_, n)| *n)
-        .unwrap_or("Ideas");
+    let category_label = GROK_CATEGORIES.iter().find(|(s, _)| *s == category).map(|(_, n)| *n).unwrap_or("Ideas");
 
     let slug = slugify(title);
 
     let docs_dir = path.join("docs");
     let category_dir = docs_dir.join(category);
-    fs::create_dir_all(&category_dir)
-        .with_context(|| format!("Failed to create docs/{}/", category))?;
+    fs::create_dir_all(&category_dir).with_context(|| format!("Failed to create docs/{}/", category))?;
 
     let next_num = next_doc_number(&category_dir, doc_type)?;
 
@@ -293,10 +287,9 @@ pub fn generate_doc(path: &Path, doc_type: &str, title: &str) -> Result<String> 
     let author = get_author();
     let date = chrono::Utc::now().format("%Y-%m-%d").to_string();
 
-    let content = render_template(path, doc_type, title, &author, &date, &category_label)?;
+    let content = render_template(path, doc_type, title, &author, &date, category_label)?;
 
-    fs::write(&file_path, &content)
-        .with_context(|| format!("Failed to write doc at {}", file_path.display()))?;
+    fs::write(&file_path, &content).with_context(|| format!("Failed to write doc at {}", file_path.display()))?;
 
     Ok(file_path.display().to_string())
 }
@@ -309,8 +302,7 @@ pub fn list_docs(path: &Path) -> Result<Vec<(String, String)>> {
 
     let mut results = Vec::new();
 
-    let entries = fs::read_dir(&docs_dir)
-        .with_context(|| format!("Failed to read docs/ at {}", docs_dir.display()))?;
+    let entries = fs::read_dir(&docs_dir).with_context(|| format!("Failed to read docs/ at {}", docs_dir.display()))?;
 
     for entry in entries {
         let entry = entry?;
@@ -321,8 +313,8 @@ pub fn list_docs(path: &Path) -> Result<Vec<(String, String)>> {
         let category_dir = entry.path();
         let category_name = entry.file_name().to_string_lossy().to_string();
 
-        let doc_files = fs::read_dir(&category_dir)
-            .with_context(|| format!("Failed to read {}", category_dir.display()))?;
+        let doc_files =
+            fs::read_dir(&category_dir).with_context(|| format!("Failed to read {}", category_dir.display()))?;
 
         for doc_entry in doc_files {
             let doc_entry = doc_entry?;
@@ -352,8 +344,7 @@ pub fn init_templates(repo_path: &Path) -> Result<()> {
         let (_type_label, body) = template_content(doc_type);
         let file_path = templates_dir.join(format!("{}.md", doc_type));
         if !file_path.exists() {
-            fs::write(&file_path, body)
-                .with_context(|| format!("Failed to write template {}", file_path.display()))?;
+            fs::write(&file_path, body).with_context(|| format!("Failed to write template {}", file_path.display()))?;
         }
     }
 
@@ -381,15 +372,15 @@ pub fn templates_list(repo_path: Option<&Path>) -> Vec<String> {
     // Scan custom templates from filesystem
     if let Some(path) = repo_path {
         let templates_dir = path.join(TEMPLATES_SUBDIR);
-        if templates_dir.is_dir() {
-            if let Ok(entries) = fs::read_dir(&templates_dir) {
-                for entry in entries.flatten() {
-                    let fname = entry.file_name().to_string_lossy().to_string();
-                    if let Some(base) = fname.strip_suffix(".md") {
-                        if !types.contains(&base.to_string()) {
-                            types.push(base.to_string());
-                        }
-                    }
+        if templates_dir.is_dir()
+            && let Ok(entries) = fs::read_dir(&templates_dir)
+        {
+            for entry in entries.flatten() {
+                let fname = entry.file_name().to_string_lossy().to_string();
+                if let Some(base) = fname.strip_suffix(".md")
+                    && !types.contains(&base.to_string())
+                {
+                    types.push(base.to_string());
                 }
             }
         }
@@ -402,13 +393,7 @@ pub fn templates_list(repo_path: Option<&Path>) -> Vec<String> {
 fn slugify(title: &str) -> String {
     title
         .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || c == '-' {
-                c
-            } else {
-                '-'
-            }
-        })
+        .map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '-' })
         .collect::<String>()
         .split('-')
         .filter(|s| !s.is_empty())
@@ -422,21 +407,19 @@ fn next_doc_number(category_dir: &Path, doc_type: &str) -> Result<u32> {
     let mut max_num: u32 = 0;
 
     if category_dir.exists() {
-        let entries = fs::read_dir(category_dir)
-            .with_context(|| format!("Failed to read {}", category_dir.display()))?;
+        let entries =
+            fs::read_dir(category_dir).with_context(|| format!("Failed to read {}", category_dir.display()))?;
 
         for entry in entries {
             let entry = entry?;
             let fname = entry.file_name().to_string_lossy().to_string();
 
-            if let Some(rest) = fname.strip_prefix(&prefix) {
-                if let Some(num_part) = rest.split('-').next() {
-                    if let Ok(num) = num_part.parse::<u32>() {
-                        if num > max_num {
-                            max_num = num;
-                        }
-                    }
-                }
+            if let Some(rest) = fname.strip_prefix(&prefix)
+                && let Some(num_part) = rest.split('-').next()
+                && let Ok(num) = num_part.parse::<u32>()
+                && num > max_num
+            {
+                max_num = num;
             }
         }
     }
@@ -445,9 +428,7 @@ fn next_doc_number(category_dir: &Path, doc_type: &str) -> Result<u32> {
 }
 
 fn get_author() -> String {
-    let output = std::process::Command::new("git")
-        .args(["config", "user.name"])
-        .output();
+    let output = std::process::Command::new("git").args(["config", "user.name"]).output();
 
     if let Ok(out) = output {
         let name = String::from_utf8_lossy(&out.stdout).trim().to_string();
@@ -456,11 +437,16 @@ fn get_author() -> String {
         }
     }
 
-    std::env::var("USER")
-        .or_else(|_| std::env::var("USERNAME"))
-        .unwrap_or_else(|_| "unknown".to_string())
+    std::env::var("USER").or_else(|_| std::env::var("USERNAME")).unwrap_or_else(|_| "unknown".to_string())
 }
-fn render_template(repo_path: &Path, doc_type: &str, title: &str, author: &str, date: &str, category: &str) -> Result<String> {
+fn render_template(
+    repo_path: &Path,
+    doc_type: &str,
+    title: &str,
+    author: &str,
+    date: &str,
+    category: &str,
+) -> Result<String> {
     let (type_label, body) = load_template(repo_path, doc_type)?;
 
     Ok(format!(
@@ -472,56 +458,53 @@ fn template_content(doc_type: &str) -> (&'static str, &'static str) {
     match doc_type {
         "bft" => (
             "Business Foundation",
-            "## Overview\n\nDescribe the foundational business context.\n\n## Objectives\n\n- \n\n## Stakeholders\n\n| Name | Role |\n|------|------|\n|      |      |\n\n## Scope\n\n### In Scope\n\n- \n\n### Out of Scope\n\n- \n\n"
+            "## Overview\n\nDescribe the foundational business context.\n\n## Objectives\n\n- \n\n## Stakeholders\n\n| Name | Role |\n|------|------|\n|      |      |\n\n## Scope\n\n### In Scope\n\n- \n\n### Out of Scope\n\n- \n\n",
         ),
         "brd" => (
             "Business Requirements Document",
-            "## Executive Summary\n\nBrief overview of the business need.\n\n## Business Requirements\n\n| ID | Requirement | Priority | Status |\n|----|------------|----------|--------|\n| BR-001 | | High | Draft |\n\n## Assumptions\n\n- \n\n## Constraints\n\n- \n\n## Acceptance Criteria\n\n- \n\n"
+            "## Executive Summary\n\nBrief overview of the business need.\n\n## Business Requirements\n\n| ID | Requirement | Priority | Status |\n|----|------------|----------|--------|\n| BR-001 | | High | Draft |\n\n## Assumptions\n\n- \n\n## Constraints\n\n- \n\n## Acceptance Criteria\n\n- \n\n",
         ),
         "frd" => (
             "Functional Requirements Document",
-            "## Functional Requirements\n\n| ID | Requirement | Priority | Status |\n|----|------------|----------|--------|\n| FR-001 | | High | Draft |\n\n## User Interface\n\n- \n\n## Business Rules\n\n- \n\n## Data Requirements\n\n- \n\n## Error Handling\n\n- \n\n"
+            "## Functional Requirements\n\n| ID | Requirement | Priority | Status |\n|----|------------|----------|--------|\n| FR-001 | | High | Draft |\n\n## User Interface\n\n- \n\n## Business Rules\n\n- \n\n## Data Requirements\n\n- \n\n## Error Handling\n\n- \n\n",
         ),
         "nfr" => (
             "Non-Functional Requirements",
-            "## Performance\n\n- Response time: \n- Throughput: \n\n## Security\n\n- Authentication: \n- Authorization: \n- Data encryption: \n\n## Availability\n\n- Uptime target: \n- Recovery time: \n\n## Scalability\n\n- \n\n## Compatibility\n\n- \n\n"
+            "## Performance\n\n- Response time: \n- Throughput: \n\n## Security\n\n- Authentication: \n- Authorization: \n- Data encryption: \n\n## Availability\n\n- Uptime target: \n- Recovery time: \n\n## Scalability\n\n- \n\n## Compatibility\n\n- \n\n",
         ),
         "adr" => (
             "Architecture Decision Record",
-            "## Status\n\nProposed\n\n## Context\n\nWhat is the issue?\n\n## Decision\n\nWhat was decided?\n\n## Consequences\n\n### Positive\n\n- \n\n### Negative\n\n- \n\n### Neutral\n\n- \n\n## Alternatives Considered\n\n- \n\n"
+            "## Status\n\nProposed\n\n## Context\n\nWhat is the issue?\n\n## Decision\n\nWhat was decided?\n\n## Consequences\n\n### Positive\n\n- \n\n### Negative\n\n- \n\n### Neutral\n\n- \n\n## Alternatives Considered\n\n- \n\n",
         ),
         "rfc" => (
             "Request for Comments",
-            "## Summary\n\nBrief one-liner.\n\n## Motivation\n\nWhy this change?\n\n## Detailed Design\n\n### Overview\n\n- \n\n### Implementation\n\n- \n\n## Alternatives\n\n- \n\n## Unresolved Questions\n\n- \n\n## References\n\n- \n\n"
+            "## Summary\n\nBrief one-liner.\n\n## Motivation\n\nWhy this change?\n\n## Detailed Design\n\n### Overview\n\n- \n\n### Implementation\n\n- \n\n## Alternatives\n\n- \n\n## Unresolved Questions\n\n- \n\n## References\n\n- \n\n",
         ),
         "tz" => (
             "Technical Design",
-            "## Overview\n\nHigh-level design summary.\n\n## Architecture\n\n- \n\n## API Design\n\n### Endpoints\n\n| Method | Path | Description |\n|--------|------|-------------|\n| GET | / | |\n\n### Data Model\n\n- \n\n## Implementation Plan\n\n1. \n\n## Testing Strategy\n\n- \n\n"
+            "## Overview\n\nHigh-level design summary.\n\n## Architecture\n\n- \n\n## API Design\n\n### Endpoints\n\n| Method | Path | Description |\n|--------|------|-------------|\n| GET | / | |\n\n### Data Model\n\n- \n\n## Implementation Plan\n\n1. \n\n## Testing Strategy\n\n- \n\n",
         ),
         "idea" => (
             "Idea",
-            "## Problem Statement\n\nWhat problem does this solve?\n\n## Proposed Solution\n\n- \n\n## Impact\n\n- \n\n## Effort Estimate\n\n- \n\n## Next Steps\n\n- \n\n"
+            "## Problem Statement\n\nWhat problem does this solve?\n\n## Proposed Solution\n\n- \n\n## Impact\n\n- \n\n## Effort Estimate\n\n- \n\n## Next Steps\n\n- \n\n",
         ),
         "user_story" => (
             "User Story",
-            "## Story\n\nAs a [role], I want [feature] so that [benefit].\n\n## Acceptance Criteria\n\n- [ ] \n\n## UI/UX Notes\n\n- \n\n## Technical Notes\n\n- \n\n## Dependencies\n\n- \n\n"
+            "## Story\n\nAs a [role], I want [feature] so that [benefit].\n\n## Acceptance Criteria\n\n- [ ] \n\n## UI/UX Notes\n\n- \n\n## Technical Notes\n\n- \n\n## Dependencies\n\n- \n\n",
         ),
         "glossary" => (
             "Glossary Entry",
-            "## Definition\n\n- \n\n## Context\n\nHow this term is used in the project.\n\n## Related Terms\n\n- \n\n## Examples\n\n- \n\n"
+            "## Definition\n\n- \n\n## Context\n\nHow this term is used in the project.\n\n## Related Terms\n\n- \n\n## Examples\n\n- \n\n",
         ),
         "screen" => (
             "Screen Design",
-            "## Overview\n\nWhat this screen shows.\n\n## Layout\n\n- \n\n## Components\n\n| Component | Type | Description |\n|-----------|------|-------------|\n| | | |\n\n## States\n\n| State | Description |\n|-------|-------------|\n| Loading | |\n| Empty | |\n| Error | |\n\n## Interactions\n\n- \n\n"
+            "## Overview\n\nWhat this screen shows.\n\n## Layout\n\n- \n\n## Components\n\n| Component | Type | Description |\n|-----------|------|-------------|\n| | | |\n\n## States\n\n| State | Description |\n|-------|-------------|\n| Loading | |\n| Empty | |\n| Error | |\n\n## Interactions\n\n- \n\n",
         ),
         "userflow" => (
             "User Flow",
-            "## Flow Name\n\n- \n\n## Steps\n\n1. \n\n## Decision Points\n\n| Point | Yes | No |\n|-------|-----|----|\n| | | |\n\n## Error Paths\n\n- \n\n## Success Criteria\n\n- \n\n"
+            "## Flow Name\n\n- \n\n## Steps\n\n1. \n\n## Decision Points\n\n| Point | Yes | No |\n|-------|-----|----|\n| | | |\n\n## Error Paths\n\n- \n\n## Success Criteria\n\n- \n\n",
         ),
-        _ => (
-            "Document",
-            "## Content\n\n- \n\n"
-        ),
+        _ => ("Document", "## Content\n\n- \n\n"),
     }
 }
 

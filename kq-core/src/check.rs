@@ -7,7 +7,6 @@ use anyhow::{Context, Result};
 
 use crate::docs;
 use crate::typespec;
-use crate::code_anchor;
 
 #[derive(Debug, Clone)]
 pub struct Link {
@@ -32,8 +31,7 @@ pub fn traceability(path: &Path) -> Result<TraceReport> {
     let mut doc_files_with_refs: Vec<&str> = Vec::new();
 
     for (_category, filepath) in &doc_files {
-        let content = fs::read_to_string(filepath)
-            .with_context(|| format!("Failed to read {}", filepath))?;
+        let content = fs::read_to_string(filepath).with_context(|| format!("Failed to read {}", filepath))?;
 
         let mut found_in_file = false;
         for line in content.lines() {
@@ -68,10 +66,7 @@ pub fn traceability(path: &Path) -> Result<TraceReport> {
     // TypeSpec model → doc IDs
     for model in &models {
         if !model.doc_refs.is_empty() {
-            graph
-                .entry(format!("TypeSpec/{}", model.file))
-                .or_default()
-                .extend(model.doc_refs.iter().cloned());
+            graph.entry(format!("TypeSpec/{}", model.file)).or_default().extend(model.doc_refs.iter().cloned());
         }
     }
 
@@ -90,10 +85,7 @@ pub fn traceability(path: &Path) -> Result<TraceReport> {
             }
         }
         if !refs_in_file.is_empty() {
-            graph
-                .entry(filepath.clone())
-                .or_default()
-                .extend(refs_in_file);
+            graph.entry(filepath.clone()).or_default().extend(refs_in_file);
         }
     }
 
@@ -123,21 +115,13 @@ pub fn traceability(path: &Path) -> Result<TraceReport> {
         .collect();
 
     // 7. Complete chains: bidirectional links where model → doc AND doc → model
-    let complete_chains: Vec<Link> = graph
-        .into_iter()
-        .filter(|(_, refs)| !refs.is_empty())
-        .map(|(source, refs)| Link { source, refs })
-        .collect();
+    let complete_chains: Vec<Link> =
+        graph.into_iter().filter(|(_, refs)| !refs.is_empty()).map(|(source, refs)| Link { source, refs }).collect();
 
     // 8. Print table
     print_report(&models, &orphans, &broken_links, &dangling_docs, &complete_chains);
 
-    Ok(TraceReport {
-        complete_chains,
-        orphans,
-        broken_links,
-        dangling_docs,
-    })
+    Ok(TraceReport { complete_chains, orphans, broken_links, dangling_docs })
 }
 
 pub fn orphans(path: &Path) -> Result<Vec<String>> {
@@ -163,11 +147,7 @@ fn print_report(
 
     for model in models {
         if model.doc_refs.is_empty() {
-            let _ = writeln!(
-                table,
-                "| {} | TypeSpec model | No @doc refs | — | Add @doc annotations |",
-                model.name
-            );
+            let _ = writeln!(table, "| {} | TypeSpec model | No @doc refs | — | Add @doc annotations |", model.name);
         } else if orphan_set.contains(model.name.as_str()) {
             let _ = writeln!(
                 table,
@@ -176,39 +156,21 @@ fn print_report(
                 model.doc_refs.join(", ")
             );
         } else {
-            let _ = writeln!(
-                table,
-                "| {} | TypeSpec model | Traced | {} | ✓ |",
-                model.name,
-                model.doc_refs.join(", ")
-            );
+            let _ = writeln!(table, "| {} | TypeSpec model | Traced | {} | ✓ |", model.name, model.doc_refs.join(", "));
         }
     }
 
     for broken in broken_links {
-        let _ = writeln!(
-            table,
-            "| {} | Broken @doc | Missing | — | Create doc or fix reference |",
-            broken
-        );
+        let _ = writeln!(table, "| {} | Broken @doc | Missing | — | Create doc or fix reference |", broken);
     }
 
     for dangling in dangling_docs {
-        let _ = writeln!(
-            table,
-            "| {} | Dangling doc | No @doc refs | — | Add @doc annotations |",
-            dangling
-        );
+        let _ = writeln!(table, "| {} | Dangling doc | No @doc refs | — | Add @doc annotations |", dangling);
     }
 
     for chain in complete_chains {
         if !dangling_set.contains(chain.source.as_str()) {
-            let _ = writeln!(
-                table,
-                "| {} | Source | Linked | {} | ✓ |",
-                chain.source,
-                chain.refs.join(", ")
-            );
+            let _ = writeln!(table, "| {} | Source | Linked | {} | ✓ |", chain.source, chain.refs.join(", "));
         }
     }
 
@@ -235,7 +197,7 @@ pub struct DeepCoverageResult {
     pub node_id: String,
     pub node_type: String,
     pub title: String,
-    pub chain_status: String,  // covered | partial | broken | orphan
+    pub chain_status: String, // covered | partial | broken | orphan
     pub coverage_pct: f64,
     pub missing_links: Vec<String>,
 }
@@ -261,12 +223,10 @@ pub fn traceability_deep(path: &Path, deep: bool, chain: Option<&str>, json: boo
 
     // Get all active nodes
     let mut stmt = db.prepare(
-        "SELECT node_id, node_type, title FROM trace_nodes WHERE status = 'active' ORDER BY node_type, node_id"
+        "SELECT node_id, node_type, title FROM trace_nodes WHERE status = 'active' ORDER BY node_type, node_id",
     )?;
-    let nodes: Vec<(String, String, String)> = stmt
-        .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?
-        .filter_map(|r| r.ok())
-        .collect();
+    let nodes: Vec<(String, String, String)> =
+        stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?.filter_map(|r| r.ok()).collect();
 
     let mut results: Vec<DeepCoverageResult> = Vec::new();
 
@@ -284,10 +244,8 @@ pub fn traceability_deep(path: &Path, deep: bool, chain: Option<&str>, json: boo
         }
 
         // Find which chain edges apply from this node type
-        let outgoing: Vec<&str> = chain_def.iter()
-            .filter(|(src, _)| *src == node_type.as_str())
-            .map(|(_, dst)| *dst)
-            .collect();
+        let outgoing: Vec<&str> =
+            chain_def.iter().filter(|(src, _)| *src == node_type.as_str()).map(|(_, dst)| *dst).collect();
 
         if outgoing.is_empty() && !deep {
             continue; // Skip nodes not in chain for basic mode
@@ -341,11 +299,7 @@ pub fn traceability_deep(path: &Path, deep: bool, chain: Option<&str>, json: boo
 
         let total_edges = outgoing.len();
         let remaining = total_edges.saturating_sub(missing.len());
-        let coverage_pct = if total_edges > 0 {
-            remaining as f64 / total_edges as f64 * 100.0
-        } else {
-            100.0
-        };
+        let coverage_pct = if total_edges > 0 { remaining as f64 / total_edges as f64 * 100.0 } else { 100.0 };
 
         results.push(DeepCoverageResult {
             node_id: node_id.clone(),
@@ -375,11 +329,7 @@ pub fn traceability_deep(path: &Path, deep: bool, chain: Option<&str>, json: boo
             "orphan" => "👻 orphan",
             _ => &r.chain_status,
         };
-        let missing_str = if r.missing_links.is_empty() {
-            "—".to_string()
-        } else {
-            r.missing_links.join(", ")
-        };
+        let missing_str = if r.missing_links.is_empty() { "—".to_string() } else { r.missing_links.join(", ") };
         println!(
             "│ {:<8} │ {:<8} │ {:<8} │ {:>5.0}%   │ {:<18} │",
             r.node_id, r.node_type, status_icon, r.coverage_pct, missing_str
@@ -412,22 +362,27 @@ pub fn rebuild_trace_graph(path: &Path) -> Result<()> {
             let file_path = path.join(&file.path);
             match file.status {
                 git2::Delta::Added | git2::Delta::Modified => {
-                    if file_path.extension().map_or(false, |e| e == "md" || e == "tsp") {
-                        if let Ok(node) = docs::parse_doc_node(&file_path) {
-                            crate::db::upsert_trace_node(
-                                &db, &node.id, &node.doc_type.to_string(),
-                                &node.title, &node.file_path,
-                                node.revision, "active", node.category.as_deref(),
-                            )?;
-                            for target in &node.needs {
-                                crate::db::upsert_trace_link(&db, &node.id, target, "needs")?;
-                            }
-                            for target in &node.covers {
-                                crate::db::upsert_trace_link(&db, &node.id, target, "covers")?;
-                            }
-                            for target in &node.inline_refs {
-                                crate::db::upsert_trace_link(&db, &node.id, target, "references")?;
-                            }
+                    if file_path.extension().is_some_and(|e| e == "md" || e == "tsp")
+                        && let Ok(node) = docs::parse_doc_node(&file_path)
+                    {
+                        crate::db::upsert_trace_node(
+                            &db,
+                            &node.id,
+                            &node.doc_type.to_string(),
+                            &node.title,
+                            &node.file_path,
+                            node.revision,
+                            "active",
+                            node.category.as_deref(),
+                        )?;
+                        for target in &node.needs {
+                            crate::db::upsert_trace_link(&db, &node.id, target, "needs")?;
+                        }
+                        for target in &node.covers {
+                            crate::db::upsert_trace_link(&db, &node.id, target, "covers")?;
+                        }
+                        for target in &node.inline_refs {
+                            crate::db::upsert_trace_link(&db, &node.id, target, "references")?;
                         }
                     }
                 }
@@ -445,9 +400,14 @@ pub fn rebuild_trace_graph(path: &Path) -> Result<()> {
         let nodes = docs::list_doc_nodes(path)?;
         for node in &nodes {
             crate::db::upsert_trace_node(
-                &db, &node.id, &node.doc_type.to_string(),
-                &node.title, &node.file_path,
-                node.revision, "active", node.category.as_deref(),
+                &db,
+                &node.id,
+                &node.doc_type.to_string(),
+                &node.title,
+                &node.file_path,
+                node.revision,
+                "active",
+                node.category.as_deref(),
             )?;
             for target in &node.needs {
                 crate::db::upsert_trace_link(&db, &node.id, target, "needs")?;
@@ -490,8 +450,10 @@ pub fn scan_projects(path: &Path) -> Result<()> {
 
         let summary = crate::code_anchor::scan_project(&project.path, scan_patterns, ignore)?;
 
-        println!("    Files: {}, anchors: {}, @see refs: {}",
-            summary.total_files, summary.total_anchors, summary.total_see_refs);
+        println!(
+            "    Files: {}, anchors: {}, @see refs: {}",
+            summary.total_files, summary.total_anchors, summary.total_see_refs
+        );
     }
 
     Ok(())
@@ -505,12 +467,10 @@ pub fn print_stale_links() -> Result<()> {
          FROM trace_links l
          JOIN trace_nodes n ON n.node_id = l.source_id
          WHERE l.status = 'stale'
-         ORDER BY n.updated_at DESC"
+         ORDER BY n.updated_at DESC",
     )?;
     let rows: Vec<(String, String, String, String, String)> = stmt
-        .query_map([], |row| Ok((
-            row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?
-        )))?
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)))?
         .filter_map(|r| r.ok())
         .collect();
 
@@ -525,7 +485,7 @@ pub fn print_stale_links() -> Result<()> {
     }
 
     Ok(())
- }
+}
 
 /// Get the HEAD commit hash as a hex string.
 fn get_head_commit(repo: &git2::Repository) -> Result<String> {
@@ -554,14 +514,13 @@ fn get_changed_files(repo: &git2::Repository, from: &str, to: &str) -> Result<Ve
     diff.foreach(
         &mut |delta, _| {
             if let Some(path) = delta.new_file().path() {
-                files.push(ChangedFile {
-                    path: path.to_string_lossy().to_string(),
-                    status: delta.status(),
-                });
+                files.push(ChangedFile { path: path.to_string_lossy().to_string(), status: delta.status() });
             }
             true
         },
-        None, None, None,
+        None,
+        None,
+        None,
     )?;
 
     files.sort_by(|a, b| a.path.cmp(&b.path));
@@ -580,12 +539,7 @@ pub fn create_orphan_task(anchor_name: &str, file_path: &str, repo_path: &str) -
          - [ ] Проверить trace: `kq check traceability`\n"
     );
 
-    let task = crate::task::task_new(
-        &title,
-        crate::task::Status::Todo,
-        crate::task::Priority::P1,
-        "",
-    )?;
+    let task = crate::task::task_new(&title, crate::task::Status::Todo, crate::task::Priority::P1, "")?;
 
     let repo = kq_config::repo_path(None)?;
     let task_path = repo.join("tasks").join(format!("{}.md", task.id));
@@ -613,7 +567,8 @@ pub fn print_stale_notifications(since: Option<&str>) -> Result<()> {
              JOIN trace_nodes n ON n.node_id = l.source_id
              WHERE l.status = 'stale'
                AND n.updated_at >= datetime('now', ?1)
-             ORDER BY n.updated_at DESC".to_string(),
+             ORDER BY n.updated_at DESC"
+                .to_string(),
             vec![Box::new(offset) as Box<dyn rusqlite::types::ToSql>],
         )
     } else {
@@ -622,7 +577,8 @@ pub fn print_stale_notifications(since: Option<&str>) -> Result<()> {
              FROM trace_links l
              JOIN trace_nodes n ON n.node_id = l.source_id
              WHERE l.status = 'stale'
-             ORDER BY n.updated_at DESC".to_string(),
+             ORDER BY n.updated_at DESC"
+                .to_string(),
             vec![],
         )
     };
@@ -673,20 +629,12 @@ mod tests {
         // Create TypeSpec with @doc ref
         let ts_dir = dir.path().join("TypeSpec");
         fs::create_dir_all(&ts_dir).unwrap();
-        fs::write(
-            ts_dir.join("user.tsp"),
-            "// @doc USR-001\nmodel User {\n  name: string\n}",
-        )
-        .unwrap();
+        fs::write(ts_dir.join("user.tsp"), "// @doc USR-001\nmodel User {\n  name: string\n}").unwrap();
 
         // Create docs with a different @doc ref
         let doc_dir = dir.path().join("docs").join("01-business-foundation");
         fs::create_dir_all(&doc_dir).unwrap();
-        fs::write(
-            doc_dir.join("architecture.md"),
-            "# Architecture\n\n// @doc ARCH-001\n",
-        )
-        .unwrap();
+        fs::write(doc_dir.join("architecture.md"), "# Architecture\n\n// @doc ARCH-001\n").unwrap();
 
         let report = traceability(dir.path()).unwrap();
         assert!(report.orphans.contains(&"User".to_string()));
@@ -699,18 +647,11 @@ mod tests {
         // Create doc with no @doc refs
         let doc_dir = dir.path().join("docs").join("01-business-foundation");
         fs::create_dir_all(&doc_dir).unwrap();
-        fs::write(
-            doc_dir.join("standalone.md"),
-            "# Standalone\n\nThis doc has no TypeSpec references.",
-        )
-        .unwrap();
+        fs::write(doc_dir.join("standalone.md"), "# Standalone\n\nThis doc has no TypeSpec references.").unwrap();
 
         let report = traceability(dir.path()).unwrap();
         assert!(!report.dangling_docs.is_empty());
-        assert!(report
-            .dangling_docs
-            .iter()
-            .any(|d| d.contains("standalone.md")));
+        assert!(report.dangling_docs.iter().any(|d| d.contains("standalone.md")));
     }
 
     #[test]
@@ -720,11 +661,7 @@ mod tests {
         // TypeSpec references non-existent doc
         let ts_dir = dir.path().join("TypeSpec");
         fs::create_dir_all(&ts_dir).unwrap();
-        fs::write(
-            ts_dir.join("model.tsp"),
-            "// @doc MISSING-999\nmodel Thing {}",
-        )
-        .unwrap();
+        fs::write(ts_dir.join("model.tsp"), "// @doc MISSING-999\nmodel Thing {}").unwrap();
 
         let report = traceability(dir.path()).unwrap();
         assert!(report.broken_links.contains(&"MISSING-999".to_string()));
@@ -737,20 +674,12 @@ mod tests {
         // TypeSpec with @doc ref
         let ts_dir = dir.path().join("TypeSpec");
         fs::create_dir_all(&ts_dir).unwrap();
-        fs::write(
-            ts_dir.join("product.tsp"),
-            "// @doc PROD-001\nmodel Product {}",
-        )
-        .unwrap();
+        fs::write(ts_dir.join("product.tsp"), "// @doc PROD-001\nmodel Product {}").unwrap();
 
         // Doc referencing same ID
         let doc_dir = dir.path().join("docs").join("03-architecture");
         fs::create_dir_all(&doc_dir).unwrap();
-        fs::write(
-            doc_dir.join("product-spec.md"),
-            "# Product Spec\n\n// @doc PROD-001\n",
-        )
-        .unwrap();
+        fs::write(doc_dir.join("product-spec.md"), "# Product Spec\n\n// @doc PROD-001\n").unwrap();
 
         let report = traceability(dir.path()).unwrap();
         assert!(report.orphans.is_empty());
@@ -764,11 +693,7 @@ mod tests {
 
         let ts_dir = dir.path().join("TypeSpec");
         fs::create_dir_all(&ts_dir).unwrap();
-        fs::write(
-            ts_dir.join("lonely.tsp"),
-            "// @doc LONELY-001\nmodel Lonely {}",
-        )
-        .unwrap();
+        fs::write(ts_dir.join("lonely.tsp"), "// @doc LONELY-001\nmodel Lonely {}").unwrap();
 
         let orphans_list = orphans(dir.path()).unwrap();
         assert!(orphans_list.contains(&"Lonely".to_string()));
@@ -794,20 +719,12 @@ mod tests {
 
         let ts_dir = dir.path().join("TypeSpec");
         fs::create_dir_all(&ts_dir).unwrap();
-        fs::write(
-            ts_dir.join("complex.tsp"),
-            "// @doc C-001\n// @doc C-002\n// @doc C-003\nmodel Complex {}",
-        )
-        .unwrap();
+        fs::write(ts_dir.join("complex.tsp"), "// @doc C-001\n// @doc C-002\n// @doc C-003\nmodel Complex {}").unwrap();
 
         // Only C-001 exists in docs
         let doc_dir = dir.path().join("docs").join("04-technical-design");
         fs::create_dir_all(&doc_dir).unwrap();
-        fs::write(
-            doc_dir.join("complex.md"),
-            "# Complex\n\n// @doc C-001\n",
-        )
-        .unwrap();
+        fs::write(doc_dir.join("complex.md"), "# Complex\n\n// @doc C-001\n").unwrap();
 
         let report = traceability(dir.path()).unwrap();
         // C-002 and C-003 are broken links
@@ -823,19 +740,11 @@ mod tests {
 
         let ts_dir = dir.path().join("TypeSpec");
         fs::create_dir_all(&ts_dir).unwrap();
-        fs::write(
-            ts_dir.join("item.tsp"),
-            "// @doc ITEM-001\nmodel Item {}",
-        )
-        .unwrap();
+        fs::write(ts_dir.join("item.tsp"), "// @doc ITEM-001\nmodel Item {}").unwrap();
 
         let doc_dir = dir.path().join("docs").join("02-product-ux");
         fs::create_dir_all(&doc_dir).unwrap();
-        fs::write(
-            doc_dir.join("item-spec.md"),
-            "# Item Spec\n\n// @doc ITEM-001\n",
-        )
-        .unwrap();
+        fs::write(doc_dir.join("item-spec.md"), "# Item Spec\n\n// @doc ITEM-001\n").unwrap();
 
         let report = traceability(dir.path()).unwrap();
         assert!(!report.complete_chains.is_empty());

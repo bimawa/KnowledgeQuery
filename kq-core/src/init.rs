@@ -102,7 +102,6 @@ pub fn init(path: Option<PathBuf>, remote: Option<String>, force: bool) -> Resul
     Ok(())
 }
 
-
 ///
 /// If `path` is `Some`, it is returned as-is.
 /// If `path` is `None`, the current working directory is used.

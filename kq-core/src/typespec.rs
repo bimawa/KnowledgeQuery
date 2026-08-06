@@ -127,10 +127,10 @@ fn collect_imports(ts_dir: &Path) -> Result<Vec<String>> {
             let content = fs::read_to_string(&path).with_context(|| format!("Failed to read {}", path.display()))?;
 
             for line in content.lines() {
-                if let Some(imp) = extract_import(line) {
-                    if !imports.contains(&imp) {
-                        imports.push(imp);
-                    }
+                if let Some(imp) = extract_import(line)
+                    && !imports.contains(&imp)
+                {
+                    imports.push(imp);
                 }
             }
         }
@@ -142,8 +142,7 @@ fn collect_imports(ts_dir: &Path) -> Result<Vec<String>> {
 
 fn extract_model_name(line: &str) -> Option<String> {
     let trimmed = line.trim();
-    if trimmed.starts_with("model ") {
-        let rest = &trimmed[6..];
+    if let Some(rest) = trimmed.strip_prefix("model ") {
         let name: String = rest.chars().take_while(|c| *c != ' ' && *c != '{' && *c != '\n').collect();
         if !name.is_empty() {
             return Some(name);
@@ -156,10 +155,10 @@ fn extract_doc_refs(content: &str) -> Vec<String> {
     let mut refs = Vec::new();
     for line in content.lines() {
         let trimmed = line.trim();
-        if trimmed.starts_with("//") {
-            let after_comment = trimmed[2..].trim();
-            if after_comment.starts_with("@doc ") {
-                let ref_str: String = after_comment[5..].chars().take_while(|c| !c.is_whitespace()).collect();
+        if let Some(after_comment) = trimmed.strip_prefix("//") {
+            let after_comment = after_comment.trim();
+            if let Some(after_doc) = after_comment.strip_prefix("@doc ") {
+                let ref_str: String = after_doc.chars().take_while(|c| !c.is_whitespace()).collect();
                 if !ref_str.is_empty() {
                     refs.push(ref_str);
                 }
@@ -171,11 +170,10 @@ fn extract_doc_refs(content: &str) -> Vec<String> {
 
 fn extract_import(line: &str) -> Option<String> {
     let trimmed = line.trim();
-    if trimmed.starts_with("import \"") {
-        let rest = &trimmed[8..];
-        if let Some(end) = rest.find('"') {
-            return Some(rest[..end].to_string());
-        }
+    if let Some(rest) = trimmed.strip_prefix("import \"")
+        && let Some(end) = rest.find('"')
+    {
+        return Some(rest[..end].to_string());
     }
     None
 }

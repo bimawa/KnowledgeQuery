@@ -9,41 +9,36 @@ pub fn list(path: &Path) -> Result<Vec<String>> {
     let mut conflicts = Vec::new();
     for conflict in index.conflicts().context("Failed to read conflicts")? {
         let conflict = conflict.context("Failed to read conflict entry")?;
-        if let Some(our) = &conflict.our {
-            if let Ok(name) = std::str::from_utf8(&our.path) {
-                conflicts.push(name.to_owned());
-            }
+        if let Some(our) = &conflict.our
+            && let Ok(name) = std::str::from_utf8(&our.path)
+        {
+            conflicts.push(name.to_owned());
         }
     }
     Ok(conflicts)
 }
 
 pub fn show(path: &Path, file: &str) -> Result<String> {
-    let content = fs::read_to_string(path.join(file))
-        .with_context(|| format!("Failed to read conflicted file: {}", file))?;
+    let content =
+        fs::read_to_string(path.join(file)).with_context(|| format!("Failed to read conflicted file: {}", file))?;
     Ok(content)
 }
 
 pub fn resolve_ours(path: &Path, file: &str) -> Result<()> {
     let repo = crate::git::open_repo(path)?;
     let index = repo.index().context("Failed to open index")?;
-    let all: Vec<_> = index.conflicts()
-        .context("Failed to read conflicts")?
-        .filter_map(|c| c.ok())
-        .collect();
+    let all: Vec<_> = index.conflicts().context("Failed to read conflicts")?.filter_map(|c| c.ok()).collect();
     drop(index);
     for conflict in &all {
-        if let Some(our) = &conflict.our {
-            if let Ok(name) = std::str::from_utf8(&our.path) {
-                if name == file {
-                    let mut index = repo.index().context("Failed to open index")?;
-                    index.add(&our).context("Failed to stage OURS version")?;
-                    index.remove(Path::new(file), 0)
-                        .context("Failed to remove conflict marker")?;
-                    index.write().context("Failed to write index")?;
-                    return Ok(());
-                }
-            }
+        if let Some(our) = &conflict.our
+            && let Ok(name) = std::str::from_utf8(&our.path)
+            && name == file
+        {
+            let mut index = repo.index().context("Failed to open index")?;
+            index.add(our).context("Failed to stage OURS version")?;
+            index.remove(Path::new(file), 0).context("Failed to remove conflict marker")?;
+            index.write().context("Failed to write index")?;
+            return Ok(());
         }
     }
     anyhow::bail!("No conflict found for file: {}", file);
@@ -52,23 +47,18 @@ pub fn resolve_ours(path: &Path, file: &str) -> Result<()> {
 pub fn resolve_theirs(path: &Path, file: &str) -> Result<()> {
     let repo = crate::git::open_repo(path)?;
     let index = repo.index().context("Failed to open index")?;
-    let all: Vec<_> = index.conflicts()
-        .context("Failed to read conflicts")?
-        .filter_map(|c| c.ok())
-        .collect();
+    let all: Vec<_> = index.conflicts().context("Failed to read conflicts")?.filter_map(|c| c.ok()).collect();
     drop(index);
     for conflict in &all {
-        if let Some(their) = &conflict.their {
-            if let Ok(name) = std::str::from_utf8(&their.path) {
-                if name == file {
-                    let mut index = repo.index().context("Failed to open index")?;
-                    index.add(&their).context("Failed to stage THEIRS version")?;
-                    index.remove(Path::new(file), 0)
-                        .context("Failed to remove conflict marker")?;
-                    index.write().context("Failed to write index")?;
-                    return Ok(());
-                }
-            }
+        if let Some(their) = &conflict.their
+            && let Ok(name) = std::str::from_utf8(&their.path)
+            && name == file
+        {
+            let mut index = repo.index().context("Failed to open index")?;
+            index.add(their).context("Failed to stage THEIRS version")?;
+            index.remove(Path::new(file), 0).context("Failed to remove conflict marker")?;
+            index.write().context("Failed to write index")?;
+            return Ok(());
         }
     }
     anyhow::bail!("No conflict found for file: {}", file);

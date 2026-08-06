@@ -111,15 +111,13 @@ fn is_comment_line(line: &str) -> bool {
 fn is_ignored(path: &Path, ignore_patterns: &[String]) -> bool {
     let path_str = path.to_string_lossy();
     // Always ignore common non-source dirs
-    const ALWAYS_IGNORE: &[&str] = &[
-        ".git", "node_modules", "target", ".obsidian",
-        "__pycache__", ".build", "Pods", ".venv",
-    ];
+    const ALWAYS_IGNORE: &[&str] =
+        &[".git", "node_modules", "target", ".obsidian", "__pycache__", ".build", "Pods", ".venv"];
     for component in path.components() {
-        if let Some(name) = component.as_os_str().to_str() {
-            if ALWAYS_IGNORE.contains(&name) {
-                return true;
-            }
+        if let Some(name) = component.as_os_str().to_str()
+            && ALWAYS_IGNORE.contains(&name)
+        {
+            return true;
         }
     }
     // User-configured ignore patterns
@@ -133,10 +131,7 @@ fn is_ignored(path: &Path, ignore_patterns: &[String]) -> bool {
 
 /// Check if a file matches any scan pattern (by extension).
 fn matches_scan_pattern(path: &Path, patterns: &[String]) -> bool {
-    let ext = path.extension()
-        .and_then(|e| e.to_str())
-        .map(|e| format!(".{}", e))
-        .unwrap_or_default();
+    let ext = path.extension().and_then(|e| e.to_str()).map(|e| format!(".{}", e)).unwrap_or_default();
     for pattern in patterns {
         if pattern.ends_with(&ext) {
             return true;
@@ -146,11 +141,7 @@ fn matches_scan_pattern(path: &Path, patterns: &[String]) -> bool {
 }
 
 /// Scan a project directory for code anchors.
-pub fn scan_project(
-    project_path: &Path,
-    scan_patterns: &[String],
-    ignore_patterns: &[String],
-) -> Result<ScanSummary> {
+pub fn scan_project(project_path: &Path, scan_patterns: &[String], ignore_patterns: &[String]) -> Result<ScanSummary> {
     let mut summary = ScanSummary::default();
     let repo_path = project_path.to_string_lossy().to_string();
     let db = crate::db::get_db()?;
@@ -158,9 +149,8 @@ pub fn scan_project(
     // Clear old anchors for this project
     let _ = crate::db::clear_project_anchors(&db, &repo_path);
 
-    for entry in walkdir::WalkDir::new(project_path)
-        .into_iter()
-        .filter_entry(|e| !is_ignored(e.path(), ignore_patterns))
+    for entry in
+        walkdir::WalkDir::new(project_path).into_iter().filter_entry(|e| !is_ignored(e.path(), ignore_patterns))
     {
         let entry = entry?;
         if !entry.file_type().is_file() {
@@ -180,9 +170,14 @@ pub fn scan_project(
                     AnchorType::SeeRef => summary.total_see_refs += 1,
                 }
                 crate::db::upsert_code_anchor(
-                    &db, &a.anchor, &a.repo_path, &a.file_path,
-                    a.line_number, a.anchor_type.as_str(),
-                    a.target_doc.as_deref(), &a.file_hash,
+                    &db,
+                    &a.anchor,
+                    &a.repo_path,
+                    &a.file_path,
+                    a.line_number,
+                    a.anchor_type.as_str(),
+                    a.target_doc.as_deref(),
+                    &a.file_hash,
                 )?;
             }
         }
@@ -191,86 +186,82 @@ pub fn scan_project(
     Ok(summary)
 }
 
-    #[test]
-    fn test_scan_file_doc_anchor_rust_style() {
-        let dir = tempfile::TempDir::new().unwrap();
-        let file_path = dir.path().join("test.rs");
-        std::fs::write(&file_path, "// @doc-anchor SecureTokenStorage\nfn main() {}").unwrap();
+#[test]
+fn test_scan_file_doc_anchor_rust_style() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let file_path = dir.path().join("test.rs");
+    std::fs::write(&file_path, "// @doc-anchor SecureTokenStorage\nfn main() {}").unwrap();
 
-        let anchors = scan_file(&file_path, "/test/project").unwrap();
-        assert_eq!(anchors.len(), 1);
-        assert_eq!(anchors[0].anchor, "SecureTokenStorage");
-        assert_eq!(anchors[0].anchor_type, AnchorType::DocAnchor);
-        assert_eq!(anchors[0].line_number, 1);
-    }
+    let anchors = scan_file(&file_path, "/test/project").unwrap();
+    assert_eq!(anchors.len(), 1);
+    assert_eq!(anchors[0].anchor, "SecureTokenStorage");
+    assert_eq!(anchors[0].anchor_type, AnchorType::DocAnchor);
+    assert_eq!(anchors[0].line_number, 1);
+}
 
-    #[test]
-    fn test_scan_file_doc_anchor_python_style() {
-        let dir = tempfile::TempDir::new().unwrap();
-        let file_path = dir.path().join("test.py");
-        std::fs::write(&file_path, "# @doc-anchor JwtValidator\ndef validate(): pass").unwrap();
+#[test]
+fn test_scan_file_doc_anchor_python_style() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let file_path = dir.path().join("test.py");
+    std::fs::write(&file_path, "# @doc-anchor JwtValidator\ndef validate(): pass").unwrap();
 
-        let anchors = scan_file(&file_path, "/test/project").unwrap();
-        assert_eq!(anchors.len(), 1);
-        assert_eq!(anchors[0].anchor, "JwtValidator");
-    }
+    let anchors = scan_file(&file_path, "/test/project").unwrap();
+    assert_eq!(anchors.len(), 1);
+    assert_eq!(anchors[0].anchor, "JwtValidator");
+}
 
-    #[test]
-    fn test_scan_file_see_ref() {
-        let dir = tempfile::TempDir::new().unwrap();
-        let file_path = dir.path().join("test.go");
-        std::fs::write(
-            &file_path,
-            "// @see docs://architecture/ADR-0002.md\npackage main",
-        )
-        .unwrap();
+#[test]
+fn test_scan_file_see_ref() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let file_path = dir.path().join("test.go");
+    std::fs::write(&file_path, "// @see docs://architecture/ADR-0002.md\npackage main").unwrap();
 
-        let anchors = scan_file(&file_path, "/test/project").unwrap();
-        assert_eq!(anchors.len(), 1);
-        assert_eq!(anchors[0].anchor_type, AnchorType::SeeRef);
-        assert_eq!(anchors[0].target_doc.as_deref(), Some("architecture/ADR-0002.md"));
-    }
+    let anchors = scan_file(&file_path, "/test/project").unwrap();
+    assert_eq!(anchors.len(), 1);
+    assert_eq!(anchors[0].anchor_type, AnchorType::SeeRef);
+    assert_eq!(anchors[0].target_doc.as_deref(), Some("architecture/ADR-0002.md"));
+}
 
-    #[test]
-    fn test_scan_file_no_false_positive() {
-        let dir = tempfile::TempDir::new().unwrap();
-        let file_path = dir.path().join("code.rs");
-        // @doc-anchor inside a string, not a comment — should be ignored
-        std::fs::write(&file_path, r#"let s = "// @doc-anchor NotARealAnchor";"#).unwrap();
+#[test]
+fn test_scan_file_no_false_positive() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let file_path = dir.path().join("code.rs");
+    // @doc-anchor inside a string, not a comment — should be ignored
+    std::fs::write(&file_path, r#"let s = "// @doc-anchor NotARealAnchor";"#).unwrap();
 
-        let anchors = scan_file(&file_path, "/test/project").unwrap();
-        assert!(anchors.is_empty(), "anchors inside strings should be ignored");
-    }
+    let anchors = scan_file(&file_path, "/test/project").unwrap();
+    assert!(anchors.is_empty(), "anchors inside strings should be ignored");
+}
 
-    #[test]
-    fn test_scan_project_empty_dir() {
-        let dir = tempfile::TempDir::new().unwrap();
-        let project_dir = tempfile::TempDir::new().unwrap();
-        let db_path = dir.path().join("test.db");
-        crate::db::init_db(&db_path).unwrap();
-        let summary = scan_project(project_dir.path(), &["**/*.rs".to_string()], &[]).unwrap();
-        assert_eq!(summary.total_files, 0);
-        assert_eq!(summary.total_anchors, 0);
-    }
+#[test]
+fn test_scan_project_empty_dir() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let project_dir = tempfile::TempDir::new().unwrap();
+    let db_path = dir.path().join("test.db");
+    crate::db::init_db(&db_path).unwrap();
+    let summary = scan_project(project_dir.path(), &["**/*.rs".to_string()], &[]).unwrap();
+    assert_eq!(summary.total_files, 0);
+    assert_eq!(summary.total_anchors, 0);
+}
 
-    #[test]
-    fn test_is_ignored_git_dir() {
-        assert!(is_ignored(Path::new("/project/.git/config"), &[]));
-        assert!(is_ignored(Path::new("/project/node_modules/foo.js"), &[]));
-        assert!(!is_ignored(Path::new("/project/src/main.rs"), &[]));
-    }
+#[test]
+fn test_is_ignored_git_dir() {
+    assert!(is_ignored(Path::new("/project/.git/config"), &[]));
+    assert!(is_ignored(Path::new("/project/node_modules/foo.js"), &[]));
+    assert!(!is_ignored(Path::new("/project/src/main.rs"), &[]));
+}
 
-    #[test]
-    fn test_matches_scan_pattern() {
-        assert!(matches_scan_pattern(Path::new("main.rs"), &["**/*.rs".to_string()]));
-        assert!(matches_scan_pattern(Path::new("app.swift"), &["**/*.swift".to_string()]));
-        assert!(!matches_scan_pattern(Path::new("readme.md"), &["**/*.rs".to_string()]));
-    }
+#[test]
+fn test_matches_scan_pattern() {
+    assert!(matches_scan_pattern(Path::new("main.rs"), &["**/*.rs".to_string()]));
+    assert!(matches_scan_pattern(Path::new("app.swift"), &["**/*.swift".to_string()]));
+    assert!(!matches_scan_pattern(Path::new("readme.md"), &["**/*.rs".to_string()]));
+}
 
-    #[test]
-    fn test_sha2_hex_deterministic() {
-        let h1 = sha2_hex("hello");
-        let h2 = sha2_hex("hello");
-        assert_eq!(h1, h2);
-        assert_eq!(h1.len(), 64);
-    }
+#[test]
+fn test_sha2_hex_deterministic() {
+    let h1 = sha2_hex("hello");
+    let h2 = sha2_hex("hello");
+    assert_eq!(h1, h2);
+    assert_eq!(h1.len(), 64);
+}

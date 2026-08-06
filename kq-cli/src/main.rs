@@ -370,18 +370,12 @@ fn main() -> Result<()> {
     match cli.command {
         Command::Init(args) => {
             kq_core::init::init(args.path.clone(), args.remote, args.force)?;
-            let target = args.path.clone().unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
-            println!(
-                "Initialized empty knowledge repository at {}",
-                target.display()
-            );
+            let target =
+                args.path.clone().unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+            println!("Initialized empty knowledge repository at {}", target.display());
         }
         Command::Search(args) => {
-            let repo_path = kq_config::repo_path(
-                args.repo
-                    .as_ref()
-                    .map(|p| p.to_str().unwrap_or_default()),
-            )?;
+            let repo_path = kq_config::repo_path(args.repo.as_ref().map(|p| p.to_str().unwrap_or_default()))?;
             let db_path = repo_path.join(".kq/knowledge.db");
 
             if !db_path.exists() {
@@ -393,39 +387,31 @@ fn main() -> Result<()> {
 
             kq_core::db::init_db(&db_path)?;
             let conn = kq_core::db::get_db()?;
-                    // Ensure index is fresh
-                    if args.vector {
-                    let mut model = kq_embeddings::EmbeddingModel::new(
-                        &repo_path.join(".kq/model-cache")
-                    )?;
-                    match model.load() {
-                        Ok(()) => {
-                            let emb = model.embed(&args.query)?;
-                            let results = kq_core::vector::hybrid_search(
-                                &conn, &args.query, &emb, args.limit, args.limit
-                            )?;
-                            for r in &results {
-                                println!("  {:6.2}  {}", r.score, r.path);
-                            }
-                        }
-                        Err(e) => {
-                            eprintln!("Vector search unavailable: {e}");
-                            eprintln!("Model will be downloaded on first vector search.");
-                        }
-                    }
-                    return Ok(());
-                    }
-
+            // Ensure index is fresh
             if args.vector {
-                let mut model = kq_embeddings::EmbeddingModel::new(
-                    &repo_path.join(".kq/model-cache")
-                )?;
+                let mut model = kq_embeddings::EmbeddingModel::new(&repo_path.join(".kq/model-cache"))?;
                 match model.load() {
                     Ok(()) => {
                         let emb = model.embed(&args.query)?;
-                        let results = kq_core::vector::hybrid_search(
-                            &conn, &args.query, &emb, args.limit, args.limit
-                        )?;
+                        let results = kq_core::vector::hybrid_search(&conn, &args.query, &emb, args.limit, args.limit)?;
+                        for r in &results {
+                            println!("  {:6.2}  {}", r.score, r.path);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Vector search unavailable: {e}");
+                        eprintln!("Model will be downloaded on first vector search.");
+                    }
+                }
+                return Ok(());
+            }
+
+            if args.vector {
+                let mut model = kq_embeddings::EmbeddingModel::new(&repo_path.join(".kq/model-cache"))?;
+                match model.load() {
+                    Ok(()) => {
+                        let emb = model.embed(&args.query)?;
+                        let results = kq_core::vector::hybrid_search(&conn, &args.query, &emb, args.limit, args.limit)?;
                         for r in &results {
                             println!("  {:6.2}  {}", r.score, r.path);
                         }
@@ -445,13 +431,7 @@ fn main() -> Result<()> {
             } else {
                 println!("Search results for: \"{}\"\n", args.query);
                 for (i, result) in results.iter().enumerate() {
-                    println!(
-                        "{:>3}. {:.2}  {}\n     Context: {}\n",
-                        i + 1,
-                        result.score,
-                        result.path,
-                        result.context
-                    );
+                    println!("{:>3}. {:.2}  {}\n     Context: {}\n", i + 1, result.score, result.path, result.context);
                 }
             }
         }
@@ -466,13 +446,9 @@ fn main() -> Result<()> {
             let repo_path = expand_tilde(&config.knowledge_path);
             let db_path = repo_path.join(".kq/knowledge.db");
             if db_path.exists() {
-                kq_core::db::init_db(&db_path)
-                    .context("Failed to initialize knowledge database")?;
+                kq_core::db::init_db(&db_path).context("Failed to initialize knowledge database")?;
             } else {
-                eprintln!(
-                    "[kq] No database found at {} — watch will skip indexing",
-                    db_path.display()
-                );
+                eprintln!("[kq] No database found at {} — watch will skip indexing", db_path.display());
             }
 
             // Trace daemon: initial cycle
@@ -491,8 +467,7 @@ fn main() -> Result<()> {
                 println!("[kq] Trace daemon: active — will re-check on each commit cycle");
             }
 
-            let rt = tokio::runtime::Runtime::new()
-                .context("Failed to start async runtime for watcher")?;
+            let rt = tokio::runtime::Runtime::new().context("Failed to start async runtime for watcher")?;
             rt.block_on(kq_core::watcher::start_watch(&config))?;
 
             // After watcher stops: final trace
@@ -503,30 +478,28 @@ fn main() -> Result<()> {
                 let _ = kq_core::check::print_stale_links();
             }
         }
-        Command::User(args) => {
-            match args.command {
-                UserCommand::Create(args) => {
-                    kq_core::task::user_create(&args.username, args.name.as_deref())?;
-                    println!("Created user: {}", args.username);
-                }
-                UserCommand::List => {
-                    let users = kq_core::task::user_list()?;
-                    if users.is_empty() {
-                        println!("No users found.");
-                    } else {
-                        println!("{:<20} {}", "Username", "Name");
-                        println!("{:<20} {}", "--------", "----");
-                        for (username, name) in &users {
-                            println!("{:<20} {}", username, name);
-                        }
+        Command::User(args) => match args.command {
+            UserCommand::Create(args) => {
+                kq_core::task::user_create(&args.username, args.name.as_deref())?;
+                println!("Created user: {}", args.username);
+            }
+            UserCommand::List => {
+                let users = kq_core::task::user_list()?;
+                if users.is_empty() {
+                    println!("No users found.");
+                } else {
+                    println!("{:<20} Name", "Username");
+                    println!("{:<20} ----", "--------");
+                    for (username, name) in &users {
+                        println!("{:<20} {}", username, name);
                     }
                 }
-                UserCommand::Show { username } => {
-                    let content = kq_core::task::user_show(&username)?;
-                    println!("{}", content);
-                }
             }
-        }
+            UserCommand::Show { username } => {
+                let content = kq_core::task::user_show(&username)?;
+                println!("{}", content);
+            }
+        },
         Command::Task(args) => {
             use kq_core::task::{Priority, Status};
             match args.command {
@@ -535,23 +508,17 @@ fn main() -> Result<()> {
                         Some(t) => t,
                         None => {
                             print!("Title: ");
-                            std::io::Write::flush(&mut std::io::stdout())
-                                .context("Failed to flush stdout")?;
+                            std::io::Write::flush(&mut std::io::stdout()).context("Failed to flush stdout")?;
                             let mut buf = String::new();
-                            std::io::stdin()
-                                .read_line(&mut buf)
-                                .context("Failed to read title from stdin")?;
+                            std::io::stdin().read_line(&mut buf).context("Failed to read title from stdin")?;
                             buf.trim().to_string()
                         }
                     };
 
-                    let priority: Priority =
-                        args.priority.parse().context("Invalid priority value")?;
-                    let status: Status =
-                        args.status.parse().context("Invalid status value")?;
+                    let priority: Priority = args.priority.parse().context("Invalid priority value")?;
+                    let status: Status = args.status.parse().context("Invalid status value")?;
 
-                    let task =
-                        kq_core::task::task_new(&title, status, priority, &args.assignee)?;
+                    let task = kq_core::task::task_new(&title, status, priority, &args.assignee)?;
                     println!("Created {}: {}", task.id, task.title);
                 }
                 TaskCommand::List(args) => {
@@ -564,8 +531,7 @@ fn main() -> Result<()> {
                         None => None,
                     };
 
-                    let tasks =
-                        kq_core::task::task_list(status_filter, priority_filter)?;
+                    let tasks = kq_core::task::task_list(status_filter, priority_filter)?;
 
                     if tasks.is_empty() {
                         println!("No tasks found.");
@@ -581,15 +547,13 @@ fn main() -> Result<()> {
                         for task in &tasks {
                             println!(
                                 "{:<12} {:<10} {:<25} {:<12} {:<10} {}",
-                                task.status, task.id, task.title, task.assignee,
-                                task.priority, task.updated,
+                                task.status, task.id, task.title, task.assignee, task.priority, task.updated,
                             );
                         }
                     }
                 }
                 TaskCommand::Status(args) => {
-                    let new_status: Status =
-                        args.status.parse().context("Invalid status value")?;
+                    let new_status: Status = args.status.parse().context("Invalid status value")?;
                     let task = kq_core::task::task_status(&args.id, new_status)?;
                     println!("Updated {} to status '{}'", task.id, task.status);
                 }
@@ -608,8 +572,7 @@ fn main() -> Result<()> {
                     println!("Assigned {} to {}", task.id, task.assignee);
                 }
                 TaskCommand::Move(args) => {
-                    let new_status: Status =
-                        args.status.parse().context("Invalid status value")?;
+                    let new_status: Status = args.status.parse().context("Invalid status value")?;
                     let task = kq_core::task::task_move(&args.id, new_status)?;
                     println!("Moved {} to status '{}'", task.id, task.status);
                 }
@@ -637,24 +600,19 @@ fn main() -> Result<()> {
                     let content = kq_core::conflict::show(&repo_path, &file)?;
                     println!("{content}");
                 }
-                ConflictCommand::Resolve { file, strategy } => {
-                    match strategy.as_str() {
-                        "ours" => {
-                            kq_core::conflict::resolve_ours(&repo_path, &file)?;
-                            println!("Resolved {file} using 'ours' strategy");
-                        }
-                        "theirs" => {
-                            kq_core::conflict::resolve_theirs(&repo_path, &file)?;
-                            println!("Resolved {file} using 'theirs' strategy");
-                        }
-                        _ => {
-                            anyhow::bail!(
-                                "Unknown strategy '{}'. Use 'ours' or 'theirs'.",
-                                strategy
-                            );
-                        }
+                ConflictCommand::Resolve { file, strategy } => match strategy.as_str() {
+                    "ours" => {
+                        kq_core::conflict::resolve_ours(&repo_path, &file)?;
+                        println!("Resolved {file} using 'ours' strategy");
                     }
-                }
+                    "theirs" => {
+                        kq_core::conflict::resolve_theirs(&repo_path, &file)?;
+                        println!("Resolved {file} using 'theirs' strategy");
+                    }
+                    _ => {
+                        anyhow::bail!("Unknown strategy '{}'. Use 'ours' or 'theirs'.", strategy);
+                    }
+                },
             }
         }
         Command::Readme => {
@@ -705,15 +663,9 @@ fn main() -> Result<()> {
             // Create provider
             let provider: Box<dyn kq_llm::LlmProvider> = match llm_config.provider.as_str() {
                 "ollama" => {
-                    let endpoint = if llm_config.endpoint.is_empty() {
-                        None
-                    } else {
-                        Some(llm_config.endpoint.clone())
-                    };
-                    Box::new(kq_llm::ollama::OllamaProvider::new(
-                        llm_config.model.clone(),
-                        endpoint,
-                    ))
+                    let endpoint =
+                        if llm_config.endpoint.is_empty() { None } else { Some(llm_config.endpoint.clone()) };
+                    Box::new(kq_llm::ollama::OllamaProvider::new(llm_config.model.clone(), endpoint))
                 }
                 "openai" => Box::new(kq_llm::openai::OpenAiProvider::new(
                     llm_config.model.clone(),
@@ -728,8 +680,7 @@ fn main() -> Result<()> {
             };
 
             // Run async streaming
-            let rt = tokio::runtime::Runtime::new()
-                .context("Failed to start async runtime for LLM")?;
+            let rt = tokio::runtime::Runtime::new().context("Failed to start async runtime for LLM")?;
             let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<String>();
 
             let prompt = query.clone();
@@ -768,8 +719,7 @@ fn main() -> Result<()> {
                     }
                 }
                 DocCommand::New { doc_type, title } => {
-                    let path =
-                        kq_core::docs::generate_doc(&repo_path, &doc_type, &title)?;
+                    let path = kq_core::docs::generate_doc(&repo_path, &doc_type, &title)?;
                     println!("Created document: {path}");
                 }
                 DocCommand::Template { list } => {
@@ -781,10 +731,7 @@ fn main() -> Result<()> {
                         }
                     } else {
                         let templates = kq_core::docs::templates_list(Some(&repo_path));
-                        println!(
-                            "Use `kq doc template --list` to see all {} templates.",
-                            templates.len()
-                        );
+                        println!("Use `kq doc template --list` to see all {} templates.", templates.len());
                     }
                 }
             }
@@ -803,24 +750,14 @@ fn main() -> Result<()> {
                     if models.is_empty() {
                         println!("No TypeSpec models found.");
                     } else {
-                        println!(
-                            "{:<20} {:<30} {}",
-                            "Name", "File", "Doc Refs"
-                        );
-                        println!(
-                            "{:<20} {:<30} {}",
-                            "----", "----", "--------"
-                        );
+                        println!("{:<20} {:<30} Doc Refs", "Name", "File");
+                        println!("{:<20} {:<30} --------", "----", "----");
                         for model in &models {
                             println!(
                                 "{:<20} {:<30} {}",
                                 model.name,
                                 model.file,
-                                if model.doc_refs.is_empty() {
-                                    "—".to_string()
-                                } else {
-                                    model.doc_refs.join(", ")
-                                }
+                                if model.doc_refs.is_empty() { "—".to_string() } else { model.doc_refs.join(", ") }
                             );
                         }
                     }
@@ -848,12 +785,7 @@ fn main() -> Result<()> {
                     kq_core::check::traceability(&repo_path)?;
                 }
                 CheckCommand::TraceabilityDeep { deep, chain, json } => {
-                    let report = kq_core::check::traceability_deep(
-                        &repo_path,
-                        deep,
-                        chain.as_deref(),
-                        json,
-                    )?;
+                    let report = kq_core::check::traceability_deep(&repo_path, deep, chain.as_deref(), json)?;
                     if json {
                         println!("{}", report);
                     }
@@ -882,21 +814,18 @@ fn main() -> Result<()> {
         }
         Command::HandleUrl { url } => {
             // Try to find the repo: cwd or current-repo marker
-            let repo_path = match kq_config::repo_path(None) {
+            let _repo_path = match kq_config::repo_path(None) {
                 Ok(p) if p.join("knowledge.toml").exists() => p,
                 _ => {
-                    let marker = dirs::home_dir()
-                        .unwrap_or_else(|| PathBuf::from("."))
-                        .join(".kq")
-                        .join("current-repo");
+                    let marker =
+                        dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("current-repo");
                     if marker.exists() {
-                        let path = std::fs::read_to_string(&marker)
-                            .unwrap_or_default()
-                            .trim()
-                            .to_string();
+                        let path = std::fs::read_to_string(&marker).unwrap_or_default().trim().to_string();
                         PathBuf::from(path)
                     } else {
-                        anyhow::bail!("Cannot determine knowledge repo. Run `kq init` first or click the link from within a repo directory.");
+                        anyhow::bail!(
+                            "Cannot determine knowledge repo. Run `kq init` first or click the link from within a repo directory."
+                        );
                     }
                 }
             };
@@ -947,16 +876,11 @@ fn install_protocol() -> Result<()> {
     {
         // On macOS, register kq:// URL scheme via LaunchServices defaults
         // and create a simple handler script
-        let handler_script = dirs::home_dir()
-            .unwrap_or_else(|| PathBuf::from("."))
-            .join(".kq")
-            .join("kq-url-handler.sh");
+        let handler_script =
+            dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("kq-url-handler.sh");
 
         // Write a handler script that receives the URL as argument
-        let log_path = dirs::home_dir()
-            .unwrap_or_else(|| PathBuf::from("."))
-            .join(".kq")
-            .join("url-handler.log");
+        let log_path = dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("url-handler.log");
 
         let content = format!(
             r#"#!/bin/bash
@@ -1015,10 +939,7 @@ app.run()
 
         fs::write(&swift_path, &swift_src)?;
 
-        let compiled_path = dirs::home_dir()
-            .unwrap_or_else(|| PathBuf::from("."))
-            .join(".kq")
-            .join("kq-url-handler");
+        let compiled_path = dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("kq-url-handler");
 
         let status = std::process::Command::new("swiftc")
             .args(["-o", &compiled_path.to_string_lossy(), &swift_path.to_string_lossy()])
@@ -1028,10 +949,14 @@ app.run()
         if !status.success() {
             eprintln!("Warning: Swift compilation failed, using shell script fallback");
             // Fall back to registering the shell script
-            let script_path = handler_script.to_string_lossy();
             let status = std::process::Command::new("defaults")
-                .args(["write", "com.apple.LaunchServices/com.apple.launchservices.secure", "LSHandlers",
-                      "-array-add", &format!("{{LSHandlerURLScheme=kq;LSHandlerRoleAll=com.kq.urlhandler;}}")])
+                .args([
+                    "write",
+                    "com.apple.LaunchServices/com.apple.launchservices.secure",
+                    "LSHandlers",
+                    "-array-add",
+                    "{LSHandlerURLScheme=kq;LSHandlerRoleAll=com.kq.urlhandler;}",
+                ])
                 .status()?;
             if status.success() {
                 println!("Registered kq:// protocol handler (shell fallback)");
@@ -1039,10 +964,8 @@ app.run()
             }
         } else {
             // Register the compiled binary with LaunchServices via a minimal .app
-            let app_dir = dirs::home_dir()
-                .unwrap_or_else(|| PathBuf::from("."))
-                .join("Applications")
-                .join("kq-handler.app");
+            let app_dir =
+                dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join("Applications").join("kq-handler.app");
 
             let macos_dir = app_dir.join("Contents").join("MacOS");
             fs::create_dir_all(&macos_dir)?;
@@ -1076,7 +999,8 @@ app.run()
         </dict>
     </array>
 </dict>
-</plist>"#.to_string();
+</plist>"#
+                .to_string();
 
             let plist_path = app_dir.join("Contents").join("Info.plist");
             fs::write(&plist_path, &plist)?;
@@ -1086,8 +1010,7 @@ app.run()
             if binary_path.exists() {
                 fs::remove_file(&binary_path).ok();
             }
-            std::fs::copy(&compiled_path, &binary_path)
-                .context("Failed to copy handler binary into .app")?;
+            std::fs::copy(&compiled_path, &binary_path).context("Failed to copy handler binary into .app")?;
 
             // Try to codesign (optional — URL scheme needs signing on macOS 26+)
             let _ = std::process::Command::new("codesign")
@@ -1124,10 +1047,8 @@ app.run()
             kq_path.to_string_lossy().replace('\\', "\\\\")
         );
 
-        let reg_path = dirs::home_dir()
-            .unwrap_or_else(|| PathBuf::from("."))
-            .join(".kq")
-            .join("install-kq-protocol.reg");
+        let reg_path =
+            dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("install-kq-protocol.reg");
 
         fs::create_dir_all(reg_path.parent().unwrap())?;
         fs::write(&reg_path, &reg_script)?;
@@ -1196,11 +1117,7 @@ fn expand_tilde(path: &std::path::Path) -> std::path::PathBuf {
         && let Some(home) = dirs::home_dir()
     {
         let rest = rest.strip_prefix('/').unwrap_or(rest);
-        return if rest.is_empty() {
-            home
-        } else {
-            home.join(rest)
-        };
+        return if rest.is_empty() { home } else { home.join(rest) };
     }
     path.to_path_buf()
 }

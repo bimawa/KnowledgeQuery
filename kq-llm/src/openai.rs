@@ -106,16 +106,13 @@ impl LlmProvider for OpenAiProvider {
                     return Ok(());
                 }
 
-                if let Ok(chunk) = serde_json::from_str::<ChatCompletionChunk>(data) {
-                    if let Some(choice) = chunk.choices.into_iter().next() {
-                        if let Some(delta) = choice.delta {
-                            if let Some(content) = delta.content {
-                                if tx.send(content).is_err() {
-                                    return Ok(());
-                                }
-                            }
-                        }
-                    }
+                if let Ok(chunk) = serde_json::from_str::<ChatCompletionChunk>(data)
+                    && let Some(choice) = chunk.choices.into_iter().next()
+                    && let Some(delta) = choice.delta
+                    && let Some(content) = delta.content
+                    && tx.send(content).is_err()
+                {
+                    return Ok(());
                 }
             }
         }
