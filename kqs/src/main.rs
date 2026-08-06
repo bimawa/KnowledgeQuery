@@ -3,12 +3,12 @@ use clap::Parser;
 use std::fs;
 use std::path::PathBuf;
 
-/// kq — Git-native knowledge platform.
+/// kqs — Git-native knowledge platform.
 ///
 /// Initialize, watch, search, and manage a local knowledge repository
 /// backed by git.
 #[derive(Parser)]
-#[command(name = "kq", author, version, about, long_about = None)]
+#[command(name = "kqs", author, version, about, long_about = None)]
 struct Cli {
     /// Run in dev mode (project repo context)
     #[arg(long, global = true)]
@@ -380,7 +380,7 @@ fn main() -> Result<()> {
 
             if !db_path.exists() {
                 anyhow::bail!(
-                    "Knowledge database not found at {}. Run `kq init` first or use --repo to specify a different path.",
+                    "Knowledge database not found at {}. Run `kqs init` first or use --repo to specify a different path.",
                     db_path.display()
                 );
             }
@@ -448,23 +448,23 @@ fn main() -> Result<()> {
             if db_path.exists() {
                 kq_core::db::init_db(&db_path).context("Failed to initialize knowledge database")?;
             } else {
-                eprintln!("[kq] No database found at {} — watch will skip indexing", db_path.display());
+                eprintln!("[kqs] No database found at {} — watch will skip indexing", db_path.display());
             }
 
             // Trace daemon: initial cycle
             if args.trace {
-                println!("[kq] Trace daemon: rebuilding graph...");
+                println!("[kqs] Trace daemon: rebuilding graph...");
                 if let Err(e) = kq_core::check::rebuild_trace_graph(&repo_path) {
-                    eprintln!("[kq] Trace rebuild failed: {e}");
+                    eprintln!("[kqs] Trace rebuild failed: {e}");
                 }
-                println!("[kq] Trace daemon: scanning projects...");
+                println!("[kqs] Trace daemon: scanning projects...");
                 if let Err(e) = kq_core::check::scan_projects(&repo_path) {
-                    eprintln!("[kq] Project scan failed: {e}");
+                    eprintln!("[kqs] Project scan failed: {e}");
                 }
                 if let Err(e) = kq_core::check::print_stale_links() {
-                    eprintln!("[kq] Stale link check failed: {e}");
+                    eprintln!("[kqs] Stale link check failed: {e}");
                 }
-                println!("[kq] Trace daemon: active — will re-check on each commit cycle");
+                println!("[kqs] Trace daemon: active — will re-check on each commit cycle");
             }
 
             let rt = tokio::runtime::Runtime::new().context("Failed to start async runtime for watcher")?;
@@ -472,7 +472,7 @@ fn main() -> Result<()> {
 
             // After watcher stops: final trace
             if args.trace {
-                println!("\n[kq] Trace daemon: final scan...");
+                println!("\n[kqs] Trace daemon: final scan...");
                 let _ = kq_core::check::rebuild_trace_graph(&repo_path);
                 let _ = kq_core::check::scan_projects(&repo_path);
                 let _ = kq_core::check::print_stale_links();
@@ -622,7 +622,7 @@ fn main() -> Result<()> {
                 let initial = "# Project\n\n<!-- kq:start -->\n<!-- kq:end -->\n";
                 std::fs::write(&readme_path, initial)
                     .with_context(|| format!("Failed to create {}", readme_path.display()))?;
-                eprintln!("[kq] Created README.md at {}", readme_path.display());
+                eprintln!("[kqs] Created README.md at {}", readme_path.display());
             }
             kq_core::readme_gen::generate(&repo_path)?;
             println!("Regenerated README.md at {}", readme_path.display());
@@ -633,7 +633,7 @@ fn main() -> Result<()> {
             let config_path = repo_path.join("knowledge.toml");
 
             if !config_path.exists() {
-                anyhow::bail!("No knowledge.toml found. Run `kq init` first.");
+                anyhow::bail!("No knowledge.toml found. Run `kqs init` first.");
             }
 
             let config = kq_config::KnowledgeConfig::load(&config_path)?;
@@ -655,9 +655,9 @@ fn main() -> Result<()> {
             }
 
             if !context.is_empty() {
-                eprintln!("[kq] Using {} relevant documents as context", context.len());
+                eprintln!("[kqs] Using {} relevant documents as context", context.len());
             } else {
-                eprintln!("[kq] No context documents found — answering without context");
+                eprintln!("[kqs] No context documents found — answering without context");
             }
 
             // Create provider
@@ -686,7 +686,7 @@ fn main() -> Result<()> {
             let prompt = query.clone();
             rt.spawn(async move {
                 if let Err(e) = provider.ask_stream(&prompt, &context, tx).await {
-                    eprintln!("\n[kq] LLM error: {e}");
+                    eprintln!("\n[kqs] LLM error: {e}");
                 }
             });
 
@@ -701,7 +701,7 @@ fn main() -> Result<()> {
             if let Some(insert_path) = &args.insert {
                 std::fs::write(insert_path, &response)
                     .with_context(|| format!("Failed to write to {}", insert_path.display()))?;
-                eprintln!("[kq] Response written to {}", insert_path.display());
+                eprintln!("[kqs] Response written to {}", insert_path.display());
             }
         }
         Command::Doc(args) => {
@@ -731,7 +731,7 @@ fn main() -> Result<()> {
                         }
                     } else {
                         let templates = kq_core::docs::templates_list(Some(&repo_path));
-                        println!("Use `kq doc template --list` to see all {} templates.", templates.len());
+                        println!("Use `kqs doc template --list` to see all {} templates.", templates.len());
                     }
                 }
             }
@@ -824,7 +824,7 @@ fn main() -> Result<()> {
                         PathBuf::from(path)
                     } else {
                         anyhow::bail!(
-                            "Cannot determine knowledge repo. Run `kq init` first or click the link from within a repo directory."
+                            "Cannot determine knowledge repo. Run `kqs init` first or click the link from within a repo directory."
                         );
                     }
                 }

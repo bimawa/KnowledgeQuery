@@ -5,13 +5,13 @@
 - **Язык:** Rust (edition 2024)
 - **Target:** macOS (arm64), Linux (x86_64, aarch64)
 - **Сборка:** `cargo` workspace, статическая линковка (musl для Linux)
-- **Single binary:** Всё в одном бинарнике, модель эмбеддингов скачивается при первом `kq search`
+- **Single binary:** Всё в одном бинарнике, модель эмбеддингов скачивается при первом `kqs search`
 
 ## Crates (Workspace)
 
 | Crate | Type | Purpose |
 |-------|------|---------|
-| `kq-cli` | bin | CLI entry point, clap-команды |
+| `kqs` | bin | CLI entry point, clap-команды |
 | `kq-core` | lib | Watcher, search engine, git ops, task manager, README gen |
 | `kq-embeddings` | lib | Candle + all-MiniLM-L6-v2, эмбеддинги |
 | `kq-llm` | lib | LLM provider abstraction (Ollama/OpenAI/Anthropic) |
@@ -21,7 +21,7 @@
 
 | Dependency | Crate | Purpose |
 |------------|-------|---------|
-| `clap` v4 | kq-cli | CLI argument parsing |
+| `clap` v4 | kqs | CLI argument parsing |
 | `git2` | kq-core | Git операции (libgit2 bindings) |
 | `notify` | kq-core | Файловый watcher |
 | `rusqlite` | kq-core | SQLite + FTS5 |

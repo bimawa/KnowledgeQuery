@@ -6,7 +6,7 @@ use kq_config::KnowledgeConfig;
 
 /// Initialize a new knowledge repository at the given path.
 ///
-/// This is the core implementation backing `kq init`. It:
+/// This is the core implementation backing `kqs init`. It:
 /// - Resolves the target directory (default: `~/.knowledge/`)
 /// - Creates the directory structure (`docs/`, `tasks/`, `.kq/`)
 /// - Initializes a git repository

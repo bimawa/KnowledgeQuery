@@ -50,7 +50,7 @@ VideoCatDoc/                    # корневой репозиторий про
 ## Git Workflow
 
 - **Auto-commit (watcher):** `git add .` → `git commit -m "auto: ..."` (локально, без push)
-- **Manual push:** `kq push` → `git pull --rebase` → README-gen → `git add README.md` → `git commit --amend` → `git push`
+- **Manual push:** `kqs push` → `git pull --rebase` → README-gen → `git add README.md` → `git commit --amend` → `git push`
 - **No stash:** watcher не делает stash, только stage + commit
 - **Ignored:** .git, node_modules, target, .obsidian, __pycache__
 
@@ -59,13 +59,13 @@ VideoCatDoc/                    # корневой репозиторий про
 ### Crate Layering
 
 ```
-kq-cli  ──>  kq-core  ──>  kq-embeddings
+kqs    ──>  kq-core  ──>  kq-embeddings
                 │              kq-llm
                 └──>  kq-config
 ```
 
 - kq-core — центральный крейт, вся бизнес-логика
-- kq-cli — только парсинг аргументов и вывод, без логики
+- kqs — только парсинг аргументов и вывод, без логики
 - kq-embeddings / kq-llm — изолированные крейты с чёткими интерфейсами (traits)
 - kq-config — чтение конфига, никакой логики
 
@@ -85,8 +85,8 @@ kq-cli  ──>  kq-core  ──>  kq-embeddings
 
 - Все Git-операции с проверкой кода возврата
 - LLM-провайдер недоступен → graceful fallback с сообщением
-- Модель эмбеддингов не скачана → `kq search` с предупреждением, FTS работает
-- Git-конфликт при push → exit code != 0, `kq conflict` для разрешения
+- Модель эмбеддингов не скачана → `kqs search` с предупреждением, FTS работает
+- Git-конфликт при push → exit code != 0, `kqs conflict` для разрешения
 
 ## Testing Rules
 

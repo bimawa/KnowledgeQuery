@@ -51,7 +51,7 @@ jobs:
             echo "::error::tag $GITHUB_REF_NAME does not match workspace version $MANIFEST_VERSION"
             exit 1
           fi
-          echo "Publishing kq $MANIFEST_VERSION"
+          echo "Publishing kqs $MANIFEST_VERSION"
 
       # Publish in dependency order; each `cargo publish` verifies the package
       # against the registry, so dependents can only be published once their
@@ -76,7 +76,7 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
-      - name: Publish kq-cli
-        run: cargo publish -p kq-cli
+      - name: Publish kqs
+        run: cargo publish -p kqs
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

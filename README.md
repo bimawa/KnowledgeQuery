@@ -1,4 +1,4 @@
-# kq — Git-native Knowledge Platform
+# kqs — Git-native Knowledge Platform
 
 CLI tool for managing knowledge and documentation in Git + Markdown.
 Sync, search (full-text + vector), AI assistance, task tracking,
@@ -21,7 +21,7 @@ just release
 
 ```bash
 cargo run -- <command> [args]
-./target/release/kq <command>
+./target/release/kqs <command>
 ```
 
 ### Test
@@ -33,7 +33,7 @@ cargo test --workspace -- --nocapture
 
 ## Dual Mode
 
-kq runs in two contexts:
+kqs runs in two contexts:
 
 | Mode | Description | Commands |
 |------|-------------|----------|
@@ -42,45 +42,45 @@ kq runs in two contexts:
 
 ```bash
 # Explicit
-kq --dev check scan
-kq --doc doc new adr "Title"
+kqs --dev check scan
+kqs --doc doc new adr "Title"
 
 # Auto-detect: if docs/ + TypeSpec/ exist → doc mode
-kq check traceability
+kqs check traceability
 
 # Via env
-KQ_MODE=dev kq check scan
+KQ_MODE=dev kqs check scan
 ```
 
-In dev mode, doc-only commands (`kq doc new`, `kq typespec new`, `kq readme`)
+In dev mode, doc-only commands (`kqs doc new`, `kqs typespec new`, `kqs readme`)
 fail with an explanatory error.
 
 ## Initialization
 
 ```bash
 # Create a knowledge repository
-kq init
-kq init --path ~/my-knowledge --remote https://github.com/user/knowledge.git
+kqs init
+kqs init --path ~/my-knowledge --remote https://github.com/user/knowledge.git
 ```
 
 ## Working with Documents
 
 ```bash
 # List templates
-kq doc template --list
+kqs doc template --list
 
 # Create a document
-kq doc new adr "Database Choice"      # → docs/03-architecture/adr-001-*.md
-kq doc new tz "API Gateway Design"    # → docs/04-technical-design/tz-001-*.md
-kq doc new bft "Customer Portal"      # → docs/01-business-foundation/bft-001-*.md
-kq doc new frd "Sign-up"              # → docs/02-product-ux/frd-001-*.md
+kqs doc new adr "Database Choice"      # → docs/03-architecture/adr-001-*.md
+kqs doc new tz "API Gateway Design"    # → docs/04-technical-design/tz-001-*.md
+kqs doc new bft "Customer Portal"      # → docs/01-business-foundation/bft-001-*.md
+kqs doc new frd "Sign-up"              # → docs/02-product-ux/frd-001-*.md
 
 # Screen and User Flow
-kq screen "Login Screen"
-kq userflow "Onboarding Flow"
+kqs screen "Login Screen"
+kqs userflow "Onboarding Flow"
 
 # List all documents
-kq doc list
+kqs doc list
 ```
 
 ## Document Types & the Document Chain
@@ -123,18 +123,18 @@ idea → bft → brd/frd/nfr → adr → rfc → tz → typespec → code
 7. **typespec** — the data specification: models the design as checkable `TypeSpec` contracts.
 8. **code** — implements the specification, linked back via `@doc-anchor`.
 
-`kq check traceability-deep` verifies the chain is complete (`BFT → ADR → TZ → TypeSpec`),
+`kqs check traceability-deep` verifies the chain is complete (`BFT → ADR → TZ → TypeSpec`),
 flagging any missing link.
 
 ## TypeSpec — Data Specifications
 
 ```bash
 # Create a model
-kq typespec new User
+kqs typespec new User
 # → TypeSpec/User.tsp, updated TypeSpec/main.tsp
 
 # List models
-kq typespec list
+kqs typespec list
 # → Name    File        Doc Refs
 # → User    User.tsp    TZ-001
 ```
@@ -145,24 +145,24 @@ kq typespec list
 
 ```bash
 # Full report
-kq check traceability
+kqs check traceability
 # → Table: Object, Type, Status, Links, Recommendation
 
 # Orphans (TypeSpec without documentation)
-kq check orphans
+kqs check orphans
 ```
 
 ### Deep Coverage
 
 ```bash
 # Full chain BFT → FRD → ADR → TZ → TypeSpec
-kq check traceability-deep --deep
+kqs check traceability-deep --deep
 
 # Custom chain
-kq check traceability-deep --deep --chain "bft adr tz"
+kqs check traceability-deep --deep --chain "bft adr tz"
 
 # JSON for editor plugins
-kq check traceability-deep --deep --json
+kqs check traceability-deep --deep --json
 ```
 
 Deep coverage matrix:
@@ -173,10 +173,10 @@ Deep coverage matrix:
 
 ```bash
 # Scan projects from the config for @doc-anchor
-kq check scan
+kqs check scan
 
 # Rebuild the graph before scanning
-kq check scan --rebuild
+kqs check scan --rebuild
 ```
 
 When an orphan anchor is found (`@doc-anchor PushNotificationManager` without TypeSpec),
@@ -186,10 +186,10 @@ a TASK with instructions is created automatically.
 
 ```bash
 # All stale links
-kq check notify
+kqs check notify
 
 # Last 7 days
-kq check notify --since 7d
+kqs check notify --since 7d
 ```
 
 ### Example knowledge.toml with projects
@@ -220,7 +220,7 @@ relevance_threshold = 0.7
 
 ```bash
 # Regenerate
-kq readme
+kqs readme
 ```
 
 Generates between the `<!-- kq:start -->` / `<!-- kq:end -->` markers:
@@ -228,50 +228,50 @@ Generates between the `<!-- kq:start -->` / `<!-- kq:end -->` markers:
 1. **Kanban Board** — tasks by status (todo/in_progress/review/done)
 2. **Table of Contents** — document tree with clickable links
 
-Updated automatically on `kq push` and `kq watch`.
+Updated automatically on `kqs push` and `kqs watch`.
 
 ## Task Management
 
 ```bash
-kq task new --title "Implement search" --priority high
-kq task list
-kq task status TASK-001 --set in_progress
-kq task show TASK-001
-kq task search "search"
+kqs task new --title "Implement search" --priority high
+kqs task list
+kqs task status TASK-001 --set in_progress
+kqs task show TASK-001
+kqs task search "search"
 ```
 
 ## Search
 
 ```bash
 # Full-text (FTS5, always available)
-kq search "system architecture"
+kqs search "system architecture"
 
 # Vector (sqlite-vec + Candle, when a model is available)
-kq search --vector "semantic search"
+kqs search --vector "semantic search"
 
 # Hybrid (default)
-kq search "database" --limit 20
+kqs search "database" --limit 20
 ```
 
 ## Watcher / Daemon
 
 ```bash
 # Auto-commit changes
-kq watch
+kqs watch
 
 # Custom debounce
-kq watch --debounce-secs 120
+kqs watch --debounce-secs 120
 
 # Trace daemon: watcher + auto-trace on every cycle
-kq watch --trace
+kqs watch --trace
 ```
 
 ## Push
 
 ```bash
-kq push                          # pull --rebase → readme-gen → push
-kq push --no-readme              # skip README generation
-kq push --dry-run                # show changes without pushing
+kqs push                          # pull --rebase → readme-gen → push
+kqs push --no-readme              # skip README generation
+kqs push --dry-run                # show changes without pushing
 ```
 
 ## Documentation in Code (@doc-anchor)
@@ -289,7 +289,7 @@ class KeychainStorage: TokenStorable { }
 func ValidateToken(token string) bool { }
 ```
 
-When scanning, kq finds these annotations and builds the graph:
+When scanning, kqs finds these annotations and builds the graph:
 `BFT-001 → ADR-001 → TZ-001 → TypeSpec → @doc-anchor → code`
 
 Orphan anchors (anchor exists, no TypeSpec) → task created automatically.
@@ -297,17 +297,17 @@ Orphan anchors (anchor exists, no TypeSpec) → task created automatically.
 ## Conflict Resolution
 
 ```bash
-kq conflict list
-kq conflict show docs/architecture.md
-kq conflict resolve docs/architecture.md --ours
-kq conflict resolve docs/architecture.md --theirs
+kqs conflict list
+kqs conflict show docs/architecture.md
+kqs conflict resolve docs/architecture.md --ours
+kqs conflict resolve docs/architecture.md --theirs
 ```
 
 ## AI Assistance
 
 ```bash
-kq ask "How is the architecture organized?"
-kq ask "Describe the User model" --insert docs/user-model.md
+kqs ask "How is the architecture organized?"
+kqs ask "Describe the User model" --insert docs/user-model.md
 ```
 
 Requires an LLM provider in `knowledge.toml` (Ollama/OpenAI/Anthropic).
@@ -337,20 +337,18 @@ just check       # build + lint + test + fmt
 ## Installation
 
 ```bash
-# From crates.io (installs the `kq` binary)
-cargo install kq-cli
+# From crates.io (installs the `kqs` binary)
+cargo install kqs
 
 # From source
-cargo install --path kq-cli
+cargo install --path kqs
 
-kq --help
+kqs --help
 ```
 
-> **Note on the `kq` name:** the crates.io package [`kq`](https://crates.io/crates/kq)
-> is an unrelated KDL query tool. Our package is `kq-cli` and installs the `kq`
-> binary. If you already have the other `kq` installed, cargo refuses to
-> overwrite the binary — run `cargo install kq-cli --force` or
-> `cargo uninstall kq` first.
+> **Note on the name:** the crates.io package [`kq`](https://crates.io/crates/kq)
+> is an unrelated KDL query tool. Our package is `kqs` and installs the `kqs`
+> binary — no conflict with anything on crates.io.
 
 Or download a binary from [GitHub Releases](https://github.com/bimawa/KnowledgeQuery).
 
@@ -360,7 +358,7 @@ Workspace crates are published to crates.io from a `v*` tag:
 
 1. `just bump-version 0.2.0` — bump the single workspace version in `Cargo.toml`
 2. Commit and push the tag `v0.2.0` (must match the workspace version)
-3. CI runs tests, then publishes `kq-config` → `kq-llm` → `kq-embeddings` → `kq-core` → `kq-cli` in dependency order
+3. CI runs tests, then publishes `kq-config` → `kq-llm` → `kq-embeddings` → `kq-core` → `kqs` in dependency order
 4. `just publish-check` — local pre-flight: dry-run publish of the leaf crates and a package file audit of the dependents
 
 Requires the `CARGO_REGISTRY_TOKEN` secret in GitHub repository settings.
@@ -368,7 +366,7 @@ Requires the `CARGO_REGISTRY_TOKEN` secret in GitHub repository settings.
 ## Project Structure
 
 ```
-kq-cli/            # CLI entry point (clap)
+kqs/               # CLI entry point (clap)
 kq-core/           # Business logic
 ├── check.rs       # Traceability, orphans, deep coverage
 ├── code_anchor.rs # @doc-anchor scanner
@@ -416,8 +414,8 @@ readable git diff, parallel work without collisions.
 ### Example
 
 ```text
-Alice: kq task assign TASK-001 alex  → ...assign-alex.md
-Bob:   kq task assign TASK-001 maria → ...assign-maria.md
+Alice: kqs task assign TASK-001 alex  → ...assign-alex.md
+Bob:   kqs task assign TASK-001 maria → ...assign-maria.md
 ```
 
 After a rebase, both event files end up side by side; last-writer-wins

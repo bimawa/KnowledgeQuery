@@ -67,7 +67,7 @@ pub fn auto_commit_with_retry(repo: &Repository, dir: &Path) -> Result<Option<Oi
                 last_error = Some(e);
                 if attempt < delays.len() {
                     eprintln!(
-                        "[kq] Git commit failed (attempt {}/{}), retrying in {}s: {}",
+                        "[kqs] Git commit failed (attempt {}/{}), retrying in {}s: {}",
                         attempt + 1,
                         delays.len() + 1,
                         delays[attempt].as_secs(),

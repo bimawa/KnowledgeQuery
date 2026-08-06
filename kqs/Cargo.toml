@@ -1,5 +1,5 @@
 [package]
-name = "kq-cli"
+name = "kqs"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -18,7 +18,3 @@ kq-core.workspace = true
 kq-config.workspace = true
 kq-llm.workspace = true
 kq-embeddings.workspace = true
-
-[[bin]]
-name = "kq"
-path = "src/main.rs"

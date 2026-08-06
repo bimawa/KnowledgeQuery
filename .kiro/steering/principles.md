@@ -57,7 +57,7 @@ Obsidian (или любой markdown-редактор) — интерфейс д
 
 **Level:** SHOULD  
 **Rule:** Watcher автоматически коммитит изменения (git add → git commit). 
-Push — только по команде `kq push`.  
+Push — только по команде `kqs push`.  
 **Reason:** Пользователь контролирует, что и когда отправляется в remote.  
 **Applies to:** PRD, SPEC, TASKS, EXEC
 
@@ -73,7 +73,7 @@ Push — только по команде `kq push`.
 
 **Level:** SHOULD  
 **Rule:** kq не делает ничего, что пользователь не просил. Watcher коммитит 
-локально — не пушит. kq push спрашивает при конфликте.  
+локально — не пушит. kqs push спрашивает при конфликте.  
 **Reason:** Доверие пользователя. kq — инструмент, а не автопилот.  
 **Applies to:** SPEC, TASKS, EXEC, REVIEW
 
@@ -94,7 +94,7 @@ Push — только по команде `kq push`.
 ### P-010: Code Anchors — Convention, Not Enforced
 
 **Level:** SHOULD
-**Rule:** Аннотации `@doc-anchor` и `@see` в исходниках — опциональный стандарт. kq не ломает сборку при их отсутствии, только предупреждает в `kq check`.
+**Rule:** Аннотации `@doc-anchor` и `@see` в исходниках — опциональный стандарт. kq не ломает сборку при их отсутствии, только предупреждает в `kqs check`.
 **Reason:** Адаптация gradual. Насилие над командой не работает.
 **Applies to:** PRD, SPEC, TASKS
 

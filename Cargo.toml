@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["kq-cli", "kq-core", "kq-embeddings", "kq-llm", "kq-config"]
+members = ["kqs", "kq-core", "kq-embeddings", "kq-llm", "kq-config"]
 
 [workspace.package]
 edition = "2024"

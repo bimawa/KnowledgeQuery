@@ -570,9 +570,9 @@ pub fn create_orphan_task(anchor_name: &str, file_path: &str, repo_path: &str) -
     let body = format!(
         "\n@dev Найден `@doc-anchor {anchor_name}` в:\n  {repo_path}/{file_path}\n\n\
          Что нужно:\n\
-         - [ ] Создать TypeSpec модель: `kq typespec new {anchor_name}`\n\
-         - [ ] Создать TZ-документ: `kq doc new tz \"{anchor_name}\"`\n\
-         - [ ] Проверить trace: `kq check traceability`\n"
+         - [ ] Создать TypeSpec модель: `kqs typespec new {anchor_name}`\n\
+         - [ ] Создать TZ-документ: `kqs doc new tz \"{anchor_name}\"`\n\
+         - [ ] Проверить trace: `kqs check traceability`\n"
     );
 
     let task = crate::task::task_new(&title, crate::task::Status::Todo, crate::task::Priority::P1, "")?;

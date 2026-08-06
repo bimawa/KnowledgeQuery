@@ -50,7 +50,7 @@ fn collect_watch_paths(config: &KnowledgeConfig) -> Vec<PathBuf> {
         if expanded.is_dir() {
             paths.push(expanded);
         } else {
-            eprintln!("[kq] Warning: project path '{}' is not a directory — skipping", project.path.display());
+            eprintln!("[kqs] Warning: project path '{}' is not a directory — skipping", project.path.display());
         }
     }
 
@@ -92,39 +92,39 @@ fn handle_debounce_tick(dir: &Path) {
     if dir.join(".kq").is_dir()
         && let Err(e) = crate::readme_gen::generate(dir)
     {
-        eprintln!("[kq] README generation skipped: {e:#}");
+        eprintln!("[kqs] README generation skipped: {e:#}");
     }
 
     let repo = match crate::git::open_repo(dir) {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("[kq] Cannot open git repository at {}: {e:#}", dir.display());
+            eprintln!("[kqs] Cannot open git repository at {}: {e:#}", dir.display());
             return;
         }
     };
 
     match crate::git::auto_commit_with_retry(&repo, dir) {
         Ok(Some(oid)) => {
-            eprintln!("[kq] Committed {oid} (dir: {})", dir.display());
+            eprintln!("[kqs] Committed {oid} (dir: {})", dir.display());
 
             // Re-index changed files
             match crate::indexer::index_all(dir) {
                 Ok(report) => {
                     if report.indexed > 0 {
-                        eprintln!("[kq] Re-indexed: {} files indexed, {} skipped", report.indexed, report.skipped);
+                        eprintln!("[kqs] Re-indexed: {} files indexed, {} skipped", report.indexed, report.skipped);
                     }
                     if report.failed > 0 {
-                        eprintln!("[kq] Re-index failures: {}", report.failed);
+                        eprintln!("[kqs] Re-index failures: {}", report.failed);
                     }
                 }
                 Err(e) => {
-                    eprintln!("[kq] Re-index skipped (DB not initialized?): {e:#}");
+                    eprintln!("[kqs] Re-index skipped (DB not initialized?): {e:#}");
                 }
             }
         }
         Ok(None) => {}
         Err(e) => {
-            eprintln!("[kq] Auto-commit failed for {}: {e:#}", dir.display());
+            eprintln!("[kqs] Auto-commit failed for {}: {e:#}", dir.display());
         }
     }
 }
@@ -158,25 +158,25 @@ pub async fn start_watch(config: &KnowledgeConfig) -> Result<()> {
         let mut sigint = match signal(SignalKind::interrupt()) {
             Ok(s) => s,
             Err(e) => {
-                eprintln!("[kq] Failed to register SIGINT handler: {e}");
+                eprintln!("[kqs] Failed to register SIGINT handler: {e}");
                 return;
             }
         };
         let mut sigterm = match signal(SignalKind::terminate()) {
             Ok(s) => s,
             Err(e) => {
-                eprintln!("[kq] Failed to register SIGTERM handler: {e}");
+                eprintln!("[kqs] Failed to register SIGTERM handler: {e}");
                 return;
             }
         };
 
         tokio::select! {
             _ = sigint.recv() => {
-                eprintln!("[kq] Received SIGINT — shutting down...");
+                eprintln!("[kqs] Received SIGINT — shutting down...");
                 let _ = sig_sender.send(());
             }
             _ = sigterm.recv() => {
-                eprintln!("[kq] Received SIGTERM — shutting down...");
+                eprintln!("[kqs] Received SIGTERM — shutting down...");
                 let _ = sig_sender.send(());
             }
         }
@@ -208,16 +208,16 @@ pub async fn start_watch(config: &KnowledgeConfig) -> Result<()> {
         ) {
             Ok(w) => w,
             Err(e) => {
-                eprintln!("[kq] Failed to create filesystem watcher: {e}");
+                eprintln!("[kqs] Failed to create filesystem watcher: {e}");
                 return;
             }
         };
 
         for path in &paths {
             if let Err(e) = watcher.watch(path, RecursiveMode::Recursive) {
-                eprintln!("[kq] Failed to watch {}: {e}", path.display());
+                eprintln!("[kqs] Failed to watch {}: {e}", path.display());
             } else {
-                eprintln!("[kq] Watching: {}", path.display());
+                eprintln!("[kqs] Watching: {}", path.display());
             }
         }
 
@@ -231,7 +231,7 @@ pub async fn start_watch(config: &KnowledgeConfig) -> Result<()> {
     tokio::time::sleep(Duration::from_millis(100)).await;
 
     eprintln!(
-        "[kq] Watcher started. {} director(ies), debounce = {}s. Press Ctrl+C to stop.",
+        "[kqs] Watcher started. {} director(ies), debounce = {}s. Press Ctrl+C to stop.",
         watch_paths.len(),
         debounce.as_secs()
     );
@@ -244,7 +244,7 @@ pub async fn start_watch(config: &KnowledgeConfig) -> Result<()> {
     loop {
         tokio::select! {
             _ = &mut shutdown_rx => {
-                eprintln!("[kq] Shutting down...");
+                eprintln!("[kqs] Shutting down...");
                 break;
             }
             Some(_event) = event_rx.recv() => {
@@ -253,7 +253,7 @@ pub async fn start_watch(config: &KnowledgeConfig) -> Result<()> {
                     continue;
                 }
                 eprintln!(
-                    "[kq] Change detected — resetting debounce timer ({}s)",
+                    "[kqs] Change detected — resetting debounce timer ({}s)",
                     debounce.as_secs()
                 );
                 debounce_deadline = Some(tokio::time::Instant::now() + debounce);
@@ -264,7 +264,7 @@ pub async fn start_watch(config: &KnowledgeConfig) -> Result<()> {
                 {
                     debounce_deadline = None;
                     last_tick = tokio::time::Instant::now();
-                    eprintln!("[kq] Debounce tick — processing changes");
+                    eprintln!("[kqs] Debounce tick — processing changes");
                     for dir in &watch_paths {
                         handle_debounce_tick(dir);
                     }
@@ -273,7 +273,7 @@ pub async fn start_watch(config: &KnowledgeConfig) -> Result<()> {
         }
     }
 
-    eprintln!("[kq] Watcher stopped.");
+    eprintln!("[kqs] Watcher stopped.");
     Ok(())
 }
 

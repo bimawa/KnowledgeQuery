@@ -83,7 +83,7 @@ pub fn push(path: &Path, dry_run: bool, no_readme: bool) -> Result<()> {
 
     if let Err(e) = fetch_result {
         if e.class() == git2::ErrorClass::Rebase || e.code() == git2::ErrorCode::Conflict {
-            return Err(e).context("kq conflict: rebase produced conflicts — resolve manually");
+            return Err(e).context("kqs conflict: rebase produced conflicts — resolve manually");
         }
         return Err(e).context("Failed to fetch from remote");
     }
@@ -95,7 +95,7 @@ pub fn push(path: &Path, dry_run: bool, no_readme: bool) -> Result<()> {
     let head_oid = repo.head().context("No HEAD")?.target().context("HEAD has no target")?;
 
     if head_oid == remote_oid {
-        eprintln!("[kq] Already up-to-date with {}/{}", remote_name, branch);
+        eprintln!("[kqs] Already up-to-date with {}/{}", remote_name, branch);
         return Ok(());
     }
 
@@ -103,21 +103,21 @@ pub fn push(path: &Path, dry_run: bool, no_readme: bool) -> Result<()> {
         let head_commit = repo.head().context("No HEAD")?.peel_to_commit().context("HEAD not a commit")?;
         let remote_commit = repo.find_commit(remote_oid)?;
 
-        eprintln!("[kq] Dry run — would push:");
+        eprintln!("[kqs] Dry run — would push:");
         eprintln!("  local:  {} {}", &head_commit.id().to_string()[..8], head_commit.summary().unwrap_or(""));
         eprintln!("  remote: {} {}", &remote_commit.id().to_string()[..8], remote_commit.summary().unwrap_or(""));
         return Ok(());
     }
 
     let oid = if !no_readme {
-        eprintln!("[kq] Generating README...");
+        eprintln!("[kqs] Generating README...");
         crate::readme_gen::generate(path)?;
         amend_commit_with_readme(&repo)?
     } else {
         match commit_without_readme(&repo)? {
             Some(oid) => oid,
             None => {
-                eprintln!("[kq] No changes to push");
+                eprintln!("[kqs] No changes to push");
                 return Ok(());
             }
         }
@@ -136,7 +136,7 @@ pub fn push(path: &Path, dry_run: bool, no_readme: bool) -> Result<()> {
 
     remote.push(&[&refspec], Some(&mut push_opts)).context("Failed to push to remote")?;
 
-    eprintln!("[kq] Pushed {} to {}", &oid.to_string()[..8], remote_name);
+    eprintln!("[kqs] Pushed {} to {}", &oid.to_string()[..8], remote_name);
     Ok(())
 }
 
