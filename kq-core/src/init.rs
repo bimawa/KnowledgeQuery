@@ -8,7 +8,7 @@ use kq_config::KnowledgeConfig;
 ///
 /// This is the core implementation backing `kqs init`. It:
 /// - Resolves the target directory (default: `~/.knowledge/`)
-/// - Creates the directory structure (`docs/`, `tasks/`, `.kq/`)
+/// - Creates the directory structure (`docs/`, `tasks/`, `.kqs/`)
 /// - Initializes a git repository
 /// - Writes a default `knowledge.toml` configuration
 /// - Stages all files and creates an initial commit
@@ -50,14 +50,15 @@ pub fn init(path: Option<PathBuf>, remote: Option<String>, force: bool) -> Resul
     // 3. Create directory structure
     fs::create_dir_all(target_path.join("docs")).context("Failed to create docs/ directory")?;
     fs::create_dir_all(target_path.join("tasks")).context("Failed to create tasks/ directory")?;
-    fs::create_dir_all(target_path.join(".kq")).context("Failed to create .kq/ directory")?;
+    fs::create_dir_all(crate::state_dir(&target_path)).context("Failed to create .kqs/ directory")?;
     // 3.1 Create default templates
     crate::docs::init_templates(&target_path)?;
     // 3.2 Create events directory
-    fs::create_dir_all(target_path.join(".kq/events")).context("Failed to create .kq/events/ directory")?;
+    fs::create_dir_all(crate::state_dir(&target_path).join("events"))
+        .context("Failed to create .kqs/events/ directory")?;
 
     // 3.5 Create SQLite database with FTS5 schema
-    let db_path = target_path.join(".kq/knowledge.db");
+    let db_path = crate::state_dir(&target_path).join("knowledge.db");
     crate::db::init_db(&db_path).context("Failed to initialize FTS database")?;
 
     // 4. Initialize git repository

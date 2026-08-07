@@ -80,9 +80,9 @@ fn parse_event(content: &str) -> Result<TaskEvent> {
     Ok(event)
 }
 
-/// Write an event file to `.kq/events/<task_id>/`.
+/// Write an event file to `.kqs/events/<task_id>/`.
 fn write_event(repo_path: &Path, task_id: &str, op: &str, value: &str) -> Result<TaskEvent> {
-    let events_dir = repo_path.join(".kq/events").join(task_id);
+    let events_dir = crate::state_dir(repo_path).join("events").join(task_id);
     fs::create_dir_all(&events_dir).context("Failed to create events directory")?;
 
     let timestamp = chrono::Utc::now().format("%Y%m%dT%H%M%SZ").to_string();
@@ -395,7 +395,7 @@ fn read_task_file(path: &Path) -> Result<Task> {
 /// Create a new task with the given title, priority, and optional assignee.
 ///
 /// Creates `tasks/TASK-NNN.md` with minimal frontmatter (title, priority, created)
-/// and a create event in `.kq/events/TASK-NNN/`.
+/// and a create event in `.kqs/events/TASK-NNN/`.
 pub fn task_new(title: &str, status: Status, priority: Priority, assignee: &str) -> Result<Task> {
     let tasks_dir = tasks_dir()?;
     fs::create_dir_all(&tasks_dir).context("Failed to create tasks directory")?;
@@ -422,7 +422,7 @@ pub fn task_new(title: &str, status: Status, priority: Priority, assignee: &str)
     }
     update_task_refs(&repo, &id)?;
 
-    let state = replay_events(&repo.join(".kq/events").join(&id)).unwrap_or_default();
+    let state = replay_events(&crate::state_dir(&repo).join("events").join(&id)).unwrap_or_default();
 
     Ok(Task {
         id,
@@ -443,7 +443,7 @@ pub(crate) fn update_task_refs(repo: &Path, id: &str) -> Result<()> {
     }
     let content = fs::read_to_string(&task_path)?;
 
-    let state = replay_events(&repo.join(".kq/events").join(id)).unwrap_or_default();
+    let state = replay_events(&crate::state_dir(&repo).join("events").join(id)).unwrap_or_default();
 
     // Extract immutable fields from existing frontmatter
     let (orig_title, orig_priority, orig_created) =

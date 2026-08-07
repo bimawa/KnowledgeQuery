@@ -3,8 +3,6 @@ use std::path::Path;
 
 use anyhow::{Context, Result};
 
-const TEMPLATES_SUBDIR: &str = ".kq/templates";
-
 const GROK_CATEGORIES: &[(&str, &str)] = &[
     ("01-business-foundation", "Business Foundation"),
     ("02-product-ux", "Product & UX"),
@@ -258,10 +256,10 @@ pub fn init_with_docs(path: &Path) -> Result<()> {
 pub fn generate_doc(path: &Path, doc_type: &str, title: &str) -> Result<String> {
     // Support any type: known DOC_TYPES OR custom template file
     if !DOC_TYPES.iter().any(|(t, _)| *t == doc_type) {
-        let template_file = path.join(TEMPLATES_SUBDIR).join(format!("{}.md", doc_type));
+        let template_file = crate::state_dir(path).join("templates").join(format!("{}.md", doc_type));
         if !template_file.exists() {
             anyhow::bail!(
-                "Unknown doc type '{}'. Use one of: {} or create .kq/templates/{}.md",
+                "Unknown doc type '{}'. Use one of: {} or create .kqs/templates/{}.md",
                 doc_type,
                 DOC_TYPES.iter().map(|(t, _)| *t).collect::<Vec<_>>().join(", "),
                 doc_type
@@ -333,10 +331,10 @@ pub fn list_docs(path: &Path) -> Result<Vec<(String, String)>> {
     Ok(results)
 }
 
-/// Initialize template files in `.kq/templates/` for all document types.
+/// Initialize template files in `.kqs/templates/` for all document types.
 /// Creates the directory and writes default template `.md` files.
 pub fn init_templates(repo_path: &Path) -> Result<()> {
-    let templates_dir = repo_path.join(TEMPLATES_SUBDIR);
+    let templates_dir = crate::state_dir(repo_path).join("templates");
     fs::create_dir_all(&templates_dir)
         .with_context(|| format!("Failed to create templates dir at {}", templates_dir.display()))?;
 
@@ -351,9 +349,9 @@ pub fn init_templates(repo_path: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Load template body from `.kq/templates/<type>.md` file, falling back to hardcoded template.
+/// Load template body from `.kqs/templates/<type>.md` file, falling back to hardcoded template.
 fn load_template(repo_path: &Path, doc_type: &str) -> Result<(&'static str, String)> {
-    let template_file = repo_path.join(TEMPLATES_SUBDIR).join(format!("{}.md", doc_type));
+    let template_file = crate::state_dir(repo_path).join("templates").join(format!("{}.md", doc_type));
 
     if template_file.exists() {
         let body = fs::read_to_string(&template_file)
@@ -371,7 +369,7 @@ pub fn templates_list(repo_path: Option<&Path>) -> Vec<String> {
 
     // Scan custom templates from filesystem
     if let Some(path) = repo_path {
-        let templates_dir = path.join(TEMPLATES_SUBDIR);
+        let templates_dir = crate::state_dir(path).join("templates");
         if templates_dir.is_dir()
             && let Ok(entries) = fs::read_dir(&templates_dir)
         {

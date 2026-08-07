@@ -16,8 +16,27 @@ pub mod typespec;
 pub mod vector;
 pub mod watcher;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
+
+/// Internal state directory name inside a knowledge repo.
+pub const STATE_DIR: &str = ".kqs";
+
+/// Resolve the state directory (`.kqs`) for a knowledge repo.
+///
+/// On first use, migrates a legacy `.kq` directory in place so existing
+/// repositories keep their database, events and templates.
+pub fn state_dir(repo_path: &Path) -> PathBuf {
+    let new = repo_path.join(STATE_DIR);
+    let old = repo_path.join(".kq");
+    if old.is_dir() && !new.exists() {
+        match std::fs::rename(&old, &new) {
+            Ok(()) => eprintln!("[kqs] Migrated legacy state directory .kq -> {STATE_DIR}"),
+            Err(e) => eprintln!("[kqs] Failed to migrate .kq -> {STATE_DIR}: {e}"),
+        }
+    }
+    new
+}
 
 /// Operating mode for kqs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

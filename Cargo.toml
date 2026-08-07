@@ -4,7 +4,7 @@ members = ["kqs", "kq-core", "kq-embeddings", "kq-llm", "kq-config"]
 
 [workspace.package]
 edition = "2024"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["kq team"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/bimawa/KnowledgeQuery"

@@ -376,7 +376,7 @@ fn main() -> Result<()> {
         }
         Command::Search(args) => {
             let repo_path = kq_config::repo_path(args.repo.as_ref().map(|p| p.to_str().unwrap_or_default()))?;
-            let db_path = repo_path.join(".kq/knowledge.db");
+            let db_path = kq_core::state_dir(&repo_path).join("knowledge.db");
 
             if !db_path.exists() {
                 anyhow::bail!(
@@ -389,7 +389,8 @@ fn main() -> Result<()> {
             let conn = kq_core::db::get_db()?;
             // Ensure index is fresh
             if args.vector {
-                let mut model = kq_embeddings::EmbeddingModel::new(&repo_path.join(".kq/model-cache"))?;
+                let mut model =
+                    kq_embeddings::EmbeddingModel::new(&kq_core::state_dir(&repo_path).join("model-cache"))?;
                 match model.load() {
                     Ok(()) => {
                         let emb = model.embed(&args.query)?;
@@ -407,7 +408,8 @@ fn main() -> Result<()> {
             }
 
             if args.vector {
-                let mut model = kq_embeddings::EmbeddingModel::new(&repo_path.join(".kq/model-cache"))?;
+                let mut model =
+                    kq_embeddings::EmbeddingModel::new(&kq_core::state_dir(&repo_path).join("model-cache"))?;
                 match model.load() {
                     Ok(()) => {
                         let emb = model.embed(&args.query)?;
@@ -444,7 +446,7 @@ fn main() -> Result<()> {
             }
 
             let repo_path = expand_tilde(&config.knowledge_path);
-            let db_path = repo_path.join(".kq/knowledge.db");
+            let db_path = kq_core::state_dir(&repo_path).join("knowledge.db");
             if db_path.exists() {
                 kq_core::db::init_db(&db_path).context("Failed to initialize knowledge database")?;
             } else {
@@ -643,7 +645,7 @@ fn main() -> Result<()> {
                 .ok_or_else(|| anyhow::anyhow!("LLM not configured. Add [llm] section to knowledge.toml.\nExample:\n  [llm]\n  provider = \"ollama\"\n  model = \"llama3\"\n  endpoint = \"http://localhost:11434\""))?;
 
             // Get context from search
-            let db_path = repo_path.join(".kq/knowledge.db");
+            let db_path = kq_core::state_dir(&repo_path).join("knowledge.db");
             let mut context: Vec<String> = Vec::new();
             if db_path.exists() {
                 kq_core::db::init_db(&db_path)?;
@@ -776,7 +778,7 @@ fn main() -> Result<()> {
         }
         Command::Check(args) => {
             let repo_path = resolve_repo_path(None)?;
-            let db_path = repo_path.join(".kq/knowledge.db");
+            let db_path = kq_core::state_dir(&repo_path).join("knowledge.db");
             if db_path.exists() {
                 let _ = kq_core::db::init_db(&db_path);
             }
@@ -817,8 +819,7 @@ fn main() -> Result<()> {
             let _repo_path = match kq_config::repo_path(None) {
                 Ok(p) if p.join("knowledge.toml").exists() => p,
                 _ => {
-                    let marker =
-                        dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("current-repo");
+                    let marker = kq_config::current_repo_marker();
                     if marker.exists() {
                         let path = std::fs::read_to_string(&marker).unwrap_or_default().trim().to_string();
                         PathBuf::from(path)
@@ -877,10 +878,10 @@ fn install_protocol() -> Result<()> {
         // On macOS, register kqs:// URL scheme via LaunchServices defaults
         // and create a simple handler script
         let handler_script =
-            dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("kqs-url-handler.sh");
+            dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kqs").join("kqs-url-handler.sh");
 
         // Write a handler script that receives the URL as argument
-        let log_path = dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("url-handler.log");
+        let log_path = dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kqs").join("url-handler.log");
 
         let content = format!(
             r#"#!/bin/bash
@@ -939,7 +940,7 @@ app.run()
 
         fs::write(&swift_path, &swift_src)?;
 
-        let compiled_path = dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("kqs-url-handler");
+        let compiled_path = dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kqs").join("kqs-url-handler");
 
         let status = std::process::Command::new("swiftc")
             .args(["-o", &compiled_path.to_string_lossy(), &swift_path.to_string_lossy()])
@@ -1048,7 +1049,7 @@ app.run()
         );
 
         let reg_path =
-            dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kq").join("install-kqs-protocol.reg");
+            dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(".kqs").join("install-kqs-protocol.reg");
 
         fs::create_dir_all(reg_path.parent().unwrap())?;
         fs::write(&reg_path, &reg_script)?;

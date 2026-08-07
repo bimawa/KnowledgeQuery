@@ -85,7 +85,7 @@ kqs doc list
 
 ## Document Types & the Document Chain
 
-Every template in `.kq/templates/` carries a specific semantic load — the type is chosen
+Every template in `.kqs/templates/` carries a specific semantic load — the type is chosen
 by what question the document answers, not by preference. The types form a chain:
 each next type refines the previous one, from business intent down to the data
 specification that code implements.
@@ -386,7 +386,7 @@ kq-config/         # knowledge.toml parsing
 
 ```
 <project>/
-├── .kq/
+├── .kqs/
 │   ├── knowledge.toml      # config
 │   ├── knowledge.db        # SQLite: FTS + vectors + trace graph
 │   ├── events/             # CRDT task events
@@ -403,9 +403,9 @@ kq-config/         # knowledge.toml parsing
 Tasks use CRDT events instead of overwrites:
 
 ```
-create       → .kq/events/TASK-001/20260709T100000Z-create.md
-assign alex  → .kq/events/TASK-001/20260709T110000Z-assign-alex.md
-move review  → .kq/events/TASK-001/20260709T120000Z-move-review.md
+create       → .kqs/events/TASK-001/20260709T100000Z-create.md
+assign alex  → .kqs/events/TASK-001/20260709T110000Z-assign-alex.md
+move review  → .kqs/events/TASK-001/20260709T120000Z-move-review.md
 ```
 
 **Why:** no merge conflicts, status is computed by replay,

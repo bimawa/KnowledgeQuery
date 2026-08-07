@@ -15,7 +15,7 @@ VideoCatDoc/                    # корневой репозиторий про
 ├── README.md                   # описание knowledge-репозитория
 ├── docs/                       # база знаний (markdown)
 ├── tasks/                      # задачи (TASK-NNN.md)
-└── .kq/                        # sqlite-vec DB + кеш модели
+└── .kqs/                       # sqlite-vec DB + кеш модели
 ```
 
 ### Задачи

@@ -17,6 +17,20 @@ pub fn default_knowledge_path() -> PathBuf {
 /// 3. Fall back to `~/.knowledge/` (with tilde expansion).
 ///
 /// The `--repo` CLI flag should be passed as `custom` to override auto-detection.
+/// Path to the `~/.kqs/current-repo` marker, migrating the legacy
+/// `~/.kq/current-repo` file in place when present.
+pub fn current_repo_marker() -> PathBuf {
+    let Some(home) = home_dir() else {
+        return PathBuf::from(".kqs/current-repo");
+    };
+    let new = home.join(".kqs/current-repo");
+    let old = home.join(".kq/current-repo");
+    if old.exists() && !new.exists() {
+        let _ = std::fs::rename(&old, &new);
+    }
+    new
+}
+
 pub fn repo_path(custom: Option<&str>) -> Result<PathBuf> {
     if let Some(custom_path) = custom
         && !custom_path.is_empty()
@@ -42,17 +56,15 @@ pub fn repo_path(custom: Option<&str>) -> Result<PathBuf> {
         }
     }
 
-    // Fallback: check ~/.kq/current-repo marker
-    if let Some(home) = home_dir() {
-        let marker = home.join(".kq/current-repo");
-        if marker.exists() {
-            let content = std::fs::read_to_string(&marker).unwrap_or_default();
-            let path = content.trim().to_string();
-            if !path.is_empty() {
-                let expanded = expand_tilde(Path::new(&path));
-                if expanded.join("knowledge.toml").exists() {
-                    return Ok(expanded);
-                }
+    // Fallback: check ~/.kqs/current-repo marker
+    let marker = current_repo_marker();
+    if marker.exists() {
+        let content = std::fs::read_to_string(&marker).unwrap_or_default();
+        let path = content.trim().to_string();
+        if !path.is_empty() {
+            let expanded = expand_tilde(Path::new(&path));
+            if expanded.join("knowledge.toml").exists() {
+                return Ok(expanded);
             }
         }
     }
