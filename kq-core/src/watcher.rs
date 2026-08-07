@@ -153,32 +153,45 @@ pub async fn start_watch(config: &KnowledgeConfig) -> Result<()> {
     // --- Signal handling (SIGINT + SIGTERM) ---
     let sig_sender = shutdown_tx;
     tokio::spawn(async move {
-        use tokio::signal::unix::{SignalKind, signal};
+        #[cfg(unix)]
+        {
+            use tokio::signal::unix::{SignalKind, signal};
 
-        let mut sigint = match signal(SignalKind::interrupt()) {
-            Ok(s) => s,
-            Err(e) => {
-                eprintln!("[kqs] Failed to register SIGINT handler: {e}");
+            let mut sigint = match signal(SignalKind::interrupt()) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("[kqs] Failed to register SIGINT handler: {e}");
+                    return;
+                }
+            };
+            let mut sigterm = match signal(SignalKind::terminate()) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("[kqs] Failed to register SIGTERM handler: {e}");
+                    return;
+                }
+            };
+
+            tokio::select! {
+                _ = sigint.recv() => {
+                    eprintln!("[kqs] Received SIGINT — shutting down...");
+                    let _ = sig_sender.send(());
+                }
+                _ = sigterm.recv() => {
+                    eprintln!("[kqs] Received SIGTERM — shutting down...");
+                    let _ = sig_sender.send(());
+                }
+            }
+        }
+
+        #[cfg(windows)]
+        {
+            if let Err(e) = tokio::signal::ctrl_c().await {
+                eprintln!("[kqs] Failed to register Ctrl+C handler: {e}");
                 return;
             }
-        };
-        let mut sigterm = match signal(SignalKind::terminate()) {
-            Ok(s) => s,
-            Err(e) => {
-                eprintln!("[kqs] Failed to register SIGTERM handler: {e}");
-                return;
-            }
-        };
-
-        tokio::select! {
-            _ = sigint.recv() => {
-                eprintln!("[kqs] Received SIGINT — shutting down...");
-                let _ = sig_sender.send(());
-            }
-            _ = sigterm.recv() => {
-                eprintln!("[kqs] Received SIGTERM — shutting down...");
-                let _ = sig_sender.send(());
-            }
+            eprintln!("[kqs] Received Ctrl+C — shutting down...");
+            let _ = sig_sender.send(());
         }
     });
 
