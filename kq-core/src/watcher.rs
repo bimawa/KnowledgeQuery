@@ -89,7 +89,7 @@ fn is_relevant_event(event: &Event, ignore_dirs: &[String]) -> bool {
 /// 3. Re-indexes changed files in the knowledge database.
 fn handle_debounce_tick(dir: &Path) {
     // 1. Regenerate README from task files
-    if crate::state_dir(&dir).is_dir()
+    if crate::state_dir(dir).is_dir()
         && let Err(e) = crate::readme_gen::generate(dir)
     {
         eprintln!("[kqs] README generation skipped: {e:#}");

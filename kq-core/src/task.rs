@@ -443,7 +443,7 @@ pub(crate) fn update_task_refs(repo: &Path, id: &str) -> Result<()> {
     }
     let content = fs::read_to_string(&task_path)?;
 
-    let state = replay_events(&crate::state_dir(&repo).join("events").join(id)).unwrap_or_default();
+    let state = replay_events(&crate::state_dir(repo).join("events").join(id)).unwrap_or_default();
 
     // Extract immutable fields from existing frontmatter
     let (orig_title, orig_priority, orig_created) =
