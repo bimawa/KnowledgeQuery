@@ -172,11 +172,7 @@ fn extract_doc_marker(line: &str) -> Option<String> {
     let line = line.strip_prefix("//")?.trim();
     let after = line.strip_prefix("@doc ")?;
     let id: String = after.chars().take_while(|c| !c.is_whitespace()).collect();
-    if id.is_empty() {
-        None
-    } else {
-        Some(id)
-    }
+    if id.is_empty() { None } else { Some(id) }
 }
 
 fn collect_imports(ts_dir: &Path) -> Result<Vec<String>> {
@@ -362,7 +358,10 @@ mod tests {
 
     #[test]
     fn test_parse_models_marker_before_model() {
-        let models = parse_models("// @doc TZ-100\nmodel X {\n  id: string;\n}\n// @doc TZ-200\nmodel Y {\n  id: string;\n}", "types.tsp");
+        let models = parse_models(
+            "// @doc TZ-100\nmodel X {\n  id: string;\n}\n// @doc TZ-200\nmodel Y {\n  id: string;\n}",
+            "types.tsp",
+        );
         assert_eq!(models.len(), 2);
         assert_eq!(models[0].name, "X");
         assert_eq!(models[0].doc_refs, vec!["TZ-100".to_string()]);
@@ -372,7 +371,8 @@ mod tests {
 
     #[test]
     fn test_parse_models_marker_inside_body() {
-        let models = parse_models("model A {\n  // @doc TZ-001\n  id: string;\n}\nmodel B {\n  id: string;\n}", "types.tsp");
+        let models =
+            parse_models("model A {\n  // @doc TZ-001\n  id: string;\n}\nmodel B {\n  id: string;\n}", "types.tsp");
         assert_eq!(models.len(), 2);
         assert_eq!(models[0].name, "A");
         assert_eq!(models[0].doc_refs, vec!["TZ-001".to_string()]);
