@@ -230,6 +230,7 @@ pub fn upsert_trace_node(
         "INSERT INTO trace_nodes (node_id, node_type, title, file_path, revision, status, category, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, datetime('now'), datetime('now'))
          ON CONFLICT(node_id) DO UPDATE SET
+            node_type = excluded.node_type,
             title = excluded.title,
             file_path = excluded.file_path,
             revision = excluded.revision,

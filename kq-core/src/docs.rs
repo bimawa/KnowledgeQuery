@@ -27,6 +27,7 @@ const DOC_TYPES: &[(&str, &str)] = &[
     ("glossary", "Glossary Entry"),
     ("screen", "Screen Design"),
     ("userflow", "User Flow"),
+    ("orphans", "Orphans"),
 ];
 
 const DOC_CATEGORY_MAP: &[(&str, &str)] = &[
@@ -42,6 +43,7 @@ const DOC_CATEGORY_MAP: &[(&str, &str)] = &[
     ("glossary", "06-glossary"),
     ("screen", "04-technical-design"),
     ("userflow", "04-technical-design"),
+    ("orphans", "05-ideas"),
 ];
 
 /// Get the human-readable label for a category slug.
@@ -64,6 +66,7 @@ pub enum DocType {
     Glossary,
     Screen,
     Userflow,
+    Orphans,
     Typespec,
 }
 
@@ -82,6 +85,7 @@ impl std::fmt::Display for DocType {
             DocType::Glossary => write!(f, "glossary"),
             DocType::Screen => write!(f, "screen"),
             DocType::Userflow => write!(f, "userflow"),
+            DocType::Orphans => write!(f, "orphans"),
             DocType::Typespec => write!(f, "typespec"),
         }
     }
@@ -100,6 +104,7 @@ const DOC_TYPE_PREFIXES: &[(&str, DocType)] = &[
     ("glossary-", DocType::Glossary),
     ("screen-", DocType::Screen),
     ("userflow-", DocType::Userflow),
+    ("orphans-", DocType::Orphans),
 ];
 
 /// Detect document type from filename prefix.
@@ -501,6 +506,10 @@ fn template_content(doc_type: &str) -> (&'static str, &'static str) {
         "userflow" => (
             "User Flow",
             "## Flow Name\n\n- \n\n## Steps\n\n1. \n\n## Decision Points\n\n| Point | Yes | No |\n|-------|-----|----|\n| | | |\n\n## Error Paths\n\n- \n\n## Success Criteria\n\n- \n\n",
+        ),
+        "orphans" => (
+            "Orphans",
+            "## Цель\n\n- \n\n## Не покрытые области\n\n| Область | Документ | Статус | Что отсутствует |\n|---------|----------|--------|-----------------|\n| | | | |\n\n## Где искать орфаны\n\n- \n\n## Чеклист дополнения\n\n- [ ]\n",
         ),
         _ => ("Document", "## Content\n\n- \n\n"),
     }
