@@ -19,9 +19,9 @@ pub struct IndexingReport {
     pub errors: Vec<(String, String)>,
 }
 
-/// Walk `dir` recursively, find all `.md` files, and index them.
+/// Walk `dir` recursively, find all `.md` and `.tsp` files, and index them.
 ///
-/// Uses `walkdir::WalkDir` for directory traversal. For each `.md` file,
+/// Uses `walkdir::WalkDir` for directory traversal. For each indexed file,
 /// calls `index_file()` and collects results into an `IndexingReport`.
 ///
 /// # Errors
@@ -37,7 +37,8 @@ pub(crate) fn index_all_internal(conn: &Connection, dir: &Path) -> Result<Indexi
 
     for entry in WalkDir::new(dir).into_iter().filter_map(|e| e.ok()) {
         let path = entry.path();
-        if path.extension().map(|ext| ext == "md").unwrap_or(false) && path.is_file() {
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+        if (ext == "md" || ext == "tsp") && path.is_file() {
             match index_file_internal(conn, path) {
                 Ok(true) => report.indexed += 1,
                 Ok(false) => report.skipped += 1,
@@ -60,8 +61,8 @@ pub(crate) fn index_all_internal(conn: &Connection, dir: &Path) -> Result<Indexi
 /// Returns `Ok(true)` if the file was indexed, `Ok(false)` if it was skipped
 /// (hash unchanged).
 ///
-/// # Arguments
-/// * `path` — Filesystem path to the `.md` file.
+/// Arguments
+/// * `path` — Filesystem path to the file to index.
 ///
 /// # Errors
 /// - File cannot be read.
@@ -248,6 +249,30 @@ mod tests {
         assert_eq!(report.indexed, 3, "should index 3 .md files");
         assert_eq!(report.skipped, 0);
         assert_eq!(report.failed, 0);
+    }
+
+    #[test]
+    fn test_index_all_internal_finds_tsp_files() {
+        let (_dir, conn) = setup_db();
+        let file_dir = TempDir::new().unwrap();
+        fs::write(file_dir.path().join("a.md"), "a").unwrap();
+        fs::write(file_dir.path().join("model.tsp"), "model User {}").unwrap();
+        fs::write(file_dir.path().join("b.txt"), "b").unwrap(); // should be ignored
+
+        let report = index_all_internal(&conn, file_dir.path()).unwrap();
+        assert_eq!(report.indexed, 2, "should index 1 .md and 1 .tsp file");
+        assert_eq!(report.skipped, 0);
+        assert_eq!(report.failed, 0);
+
+        // Verify the .tsp content reached the files table.
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM files WHERE path LIKE '%.tsp'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(count, 1, "should have indexed the .tsp file");
     }
 
     #[test]
