@@ -541,7 +541,7 @@ mod tests {
     #[test]
     fn test_templates_list() {
         let templates = templates_list(None);
-        assert_eq!(templates.len(), 12);
+        assert_eq!(templates.len(), 13);
         assert!(templates.contains(&"bft".to_string()));
         assert!(templates.contains(&"brd".to_string()));
         assert!(templates.contains(&"frd".to_string()));
@@ -554,6 +554,7 @@ mod tests {
         assert!(templates.contains(&"glossary".to_string()));
         assert!(templates.contains(&"screen".to_string()));
         assert!(templates.contains(&"userflow".to_string()));
+        assert!(templates.contains(&"orphans".to_string()));
     }
 
     #[test]

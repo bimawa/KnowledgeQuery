@@ -265,13 +265,8 @@ mod tests {
         assert_eq!(report.failed, 0);
 
         // Verify the .tsp content reached the files table.
-        let count: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) FROM files WHERE path LIKE '%.tsp'",
-                [],
-                |row| row.get(0),
-            )
-            .unwrap();
+        let count: i64 =
+            conn.query_row("SELECT COUNT(*) FROM files WHERE path LIKE '%.tsp'", [], |row| row.get(0)).unwrap();
         assert_eq!(count, 1, "should have indexed the .tsp file");
     }
 

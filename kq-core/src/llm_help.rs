@@ -5,7 +5,8 @@
 pub fn generate() -> String {
     let mut out = String::with_capacity(4096);
 
-    out.push_str(r##"# kqs — Knowledge Platform CLI
+    out.push_str(
+        r##"# kqs — Knowledge Platform CLI
 
 You are an AI assistant integrated with **kqs**, a Git-native knowledge management tool.
 You create and manage documentation, TypeSpec models, and traceability links.
@@ -180,7 +181,8 @@ Scan: `kqs check scan`. Orphan anchors without docs auto-create a task.
 4. Always run `kqs check traceability-deep --deep` at the end to verify links.
 5. Run `kqs readme` last to update the Table of Contents.
 6. Use `kqs --doc` flag when working in the knowledge repo.
-"##);
+"##,
+    );
 
     out
 }
