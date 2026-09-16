@@ -256,10 +256,16 @@ pub async fn start_watch(config: &KnowledgeConfig) -> Result<()> {
         watch_paths.len(),
         debounce.as_secs()
     );
-
     // --- Main debounce loop ---
     let poll_interval = Duration::from_millis(250);
     let mut debounce_deadline: Option<tokio::time::Instant> = None;
+
+    // Initial sync: pick up changes already present in the working tree
+    // before the watcher started — live events only fire on later writes.
+    eprintln!("[kqs] Initial sync — processing existing changes");
+    for dir in &watch_paths {
+        handle_debounce_tick(dir);
+    }
     let mut last_tick = tokio::time::Instant::now();
 
     loop {
