@@ -54,6 +54,8 @@ enum Command {
     HandleUrl { url: String },
     /// Install the kqs:// protocol handler on this system
     InstallProtocol,
+    /// Resync the knowledge index (files, FTS, trace graph) from working tree
+    Resync,
     /// LLM-oriented help: complete system prompt for AI assistants
     LlmHelp,
 }
@@ -723,6 +725,7 @@ fn main() -> Result<()> {
                 DocCommand::New { doc_type, title } => {
                     let path = kq_core::docs::generate_doc(&repo_path, &doc_type, &title)?;
                     println!("Created document: {path}");
+                    best_effort_resync(&repo_path);
                 }
                 DocCommand::Template { list } => {
                     if list {
@@ -746,6 +749,7 @@ fn main() -> Result<()> {
                     println!("Created TypeSpec model: {path}");
                     kq_core::typespec::init_main_tsp(&repo_path)?;
                     println!("Updated TypeSpec/main.tsp");
+                    best_effort_resync(&repo_path);
                 }
                 TypespecCommand::List => {
                     let models = kq_core::typespec::list_types(&repo_path)?;
@@ -770,11 +774,13 @@ fn main() -> Result<()> {
             let repo_path = resolve_repo_path(None)?;
             kq_core::docs::generate_doc(&repo_path, "screen", &args.title)?;
             println!("Screen design document created.");
+            best_effort_resync(&repo_path);
         }
         Command::Userflow(args) => {
             let repo_path = resolve_repo_path(None)?;
             kq_core::docs::generate_doc(&repo_path, "userflow", &args.title)?;
             println!("User flow document created.");
+            best_effort_resync(&repo_path);
         }
         Command::Check(args) => {
             let repo_path = resolve_repo_path(None)?;
@@ -860,6 +866,22 @@ fn main() -> Result<()> {
         }
         Command::InstallProtocol => {
             install_protocol()?;
+        }
+        Command::Resync => {
+            let repo_path = resolve_repo_path(None)?;
+            let db_path = kq_core::state_dir(&repo_path).join("knowledge.db");
+            kq_core::db::init_db(&db_path).context("Failed to initialize knowledge database")?;
+            let report = kq_core::resync::resync_repo(&repo_path)?;
+            println!(
+                "Resynced: {} indexed, {} skipped, {} failed, {} files pruned, {} nodes pruned ({} nodes, {} links)",
+                report.indexed,
+                report.skipped,
+                report.failed,
+                report.pruned_files,
+                report.pruned_nodes,
+                report.nodes,
+                report.links
+            );
         }
         Command::LlmHelp => {
             print!("{}", kq_core::llm_help::generate());
@@ -1108,6 +1130,29 @@ fn resolve_repo_path(path: Option<&std::path::Path>) -> Result<PathBuf> {
     match path {
         Some(p) => Ok(expand_tilde(p)),
         None => kq_config::repo_path(None),
+    }
+}
+
+/// Best-effort index refresh after commands that create docs.
+fn best_effort_resync(repo_path: &std::path::Path) {
+    let db_path = kq_core::state_dir(repo_path).join("knowledge.db");
+    if !db_path.exists() {
+        return;
+    }
+    if let Err(e) = kq_core::db::init_db(&db_path) {
+        eprintln!("[kqs] Resync skipped: {e:#}");
+        return;
+    }
+    match kq_core::resync::resync_repo(repo_path) {
+        Ok(report) => {
+            if report.indexed > 0 || report.pruned_files > 0 || report.pruned_nodes > 0 {
+                eprintln!(
+                    "[kqs] Resynced: {} indexed, {} pruned files, {} pruned nodes",
+                    report.indexed, report.pruned_files, report.pruned_nodes
+                );
+            }
+        }
+        Err(e) => eprintln!("[kqs] Resync skipped: {e:#}"),
     }
 }
 

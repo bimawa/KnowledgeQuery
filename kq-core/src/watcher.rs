@@ -88,43 +88,51 @@ fn is_relevant_event(event: &Event, ignore_dirs: &[String]) -> bool {
 /// 2. Stages all changes and creates an auto-sync commit (with retries).
 /// 3. Re-indexes changed files in the knowledge database.
 fn handle_debounce_tick(dir: &Path) {
-    // 1. Regenerate README from task files
     if crate::state_dir(dir).is_dir()
         && let Err(e) = crate::readme_gen::generate(dir)
     {
         eprintln!("[kqs] README generation skipped: {e:#}");
     }
 
-    let repo = match crate::git::open_repo(dir) {
-        Ok(r) => r,
+    match crate::git::open_repo(dir) {
+        Ok(repo) => match crate::git::auto_commit_with_retry(&repo, dir) {
+            Ok(Some(oid)) => {
+                eprintln!("[kqs] Committed {oid} (dir: {})", dir.display());
+            }
+            Ok(None) => {}
+            Err(e) => {
+                eprintln!("[kqs] Auto-commit failed for {}: {e:#}", dir.display());
+            }
+        },
         Err(e) => {
-            eprintln!("[kqs] Cannot open git repository at {}: {e:#}", dir.display());
-            return;
+            eprintln!("[kqs] Cannot open git repository at {}: {e:#} — resyncing without commit", dir.display());
         }
+    }
+
+    let resync_result = if crate::resync::is_knowledge_repo(dir) {
+        crate::resync::resync_repo(dir)
+    } else {
+        crate::resync::resync_files(dir)
     };
-
-    match crate::git::auto_commit_with_retry(&repo, dir) {
-        Ok(Some(oid)) => {
-            eprintln!("[kqs] Committed {oid} (dir: {})", dir.display());
-
-            // Re-index changed files
-            match crate::indexer::index_all(dir) {
-                Ok(report) => {
-                    if report.indexed > 0 {
-                        eprintln!("[kqs] Re-indexed: {} files indexed, {} skipped", report.indexed, report.skipped);
-                    }
-                    if report.failed > 0 {
-                        eprintln!("[kqs] Re-index failures: {}", report.failed);
-                    }
-                }
-                Err(e) => {
-                    eprintln!("[kqs] Re-index skipped (DB not initialized?): {e:#}");
-                }
+    match resync_result {
+        Ok(report) => {
+            if report.indexed > 0 || report.pruned_files > 0 || report.pruned_nodes > 0 {
+                eprintln!(
+                    "[kqs] Re-indexed: {} files indexed, {} skipped, {} files pruned, {} nodes pruned ({} nodes, {} links)",
+                    report.indexed,
+                    report.skipped,
+                    report.pruned_files,
+                    report.pruned_nodes,
+                    report.nodes,
+                    report.links
+                );
+            }
+            if report.failed > 0 {
+                eprintln!("[kqs] Re-index failures: {}", report.failed);
             }
         }
-        Ok(None) => {}
         Err(e) => {
-            eprintln!("[kqs] Auto-commit failed for {}: {e:#}", dir.display());
+            eprintln!("[kqs] Re-index skipped (DB not initialized?): {e:#}");
         }
     }
 }

@@ -10,12 +10,12 @@ pub mod init;
 pub mod llm_help;
 pub mod push;
 pub mod readme_gen;
+pub mod resync;
 pub mod search;
 pub mod task;
 pub mod typespec;
 pub mod vector;
 pub mod watcher;
-
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
